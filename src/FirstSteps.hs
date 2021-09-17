@@ -1,5 +1,5 @@
 -- creates module for factorial calculation
-module FirstSteps (fac, testPrint) where
+module FirstSteps (fac, testPrint, evens, add) where
 
 -- prints hello world to console
 testPrint :: IO ()
@@ -16,5 +16,10 @@ fac x
 evens :: [Int] -> [Int]
 evens [] = []
 evens (x:xs)
- | mod x 2 = x : evens xs
+ | mod x 2 == 0 = x:evens xs
+-- TODO(pierre): why does this display error but is working/compiling?
  | otherwise = evens xs
+
+-- adds two numbers
+add :: Integer -> Integer -> Integer
+add x y = x + y
