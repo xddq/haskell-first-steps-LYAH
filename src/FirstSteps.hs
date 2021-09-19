@@ -15,10 +15,9 @@ fac x
 -- prints all even numbers
 evens :: [Int] -> [Int]
 evens [] = []
-evens (x:xs)
- | mod x 2 == 0 = x:evens xs
--- TODO(pierre): why does this display error but is working/compiling?
- | otherwise = evens xs
+evens (x : xs)
+  | even x = x : evens xs
+  | otherwise = evens xs
 
 -- adds two numbers
 add :: Integer -> Integer -> Integer
