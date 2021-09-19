@@ -1,0 +1,7 @@
+cradle:
+  cabal:
+    - path: "src"
+      component: "lib:haskell-first-steps"
+
+    - path: "app/Main.hs"
+      component: "haskell-first-steps:exe:haskell-first-steps"
