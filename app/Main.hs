@@ -21,10 +21,3 @@ main = do
   let plusTwo = FirstSteps.add 2
   print (plusTwo 3)
   print (plusTwo 4)
-
--- TODO(pierre):
--- 1) Where can I actually find decent docu on haskell? Can't
--- even find something on https://www.haskell.org/documentation/ ??? Somewhere
--- all the types etc. must be defined, no?
--- 2) Why is coc with language server for haskell not working? E.g. I can't go
--- to definition for "print" or "do" or "IO"

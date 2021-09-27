@@ -22,3 +22,10 @@ evens (x : xs)
 -- adds two numbers
 add :: Integer -> Integer -> Integer
 add x y = x + y
+
+-- get all evens from 1 to 30
+-- evens [1,2..30]
+-- add 1 to all evens from 1 to 30 using a lambda (just for testing, never use
+-- lambda for existing operations, here it is (+ 1)
+-- map (\x -> x + 1) (evens [1,2..30])
+
