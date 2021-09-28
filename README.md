@@ -1,8 +1,10 @@
 ## Learning haskell
 
 - first project where I will read through [this awesome
-  book](http://learnyouahaskell.com/) and code the functions used there based on
-their description. Trying to get a basic understanding of haskell.
+  book](http://learnyouahaskell.com/).
+- My approach: Reading through the description of the functions and then
+  implementing my version to check against the code sample.
+- Trying to get a basic understanding of haskell.
 
 ## install haskell toolchain
 - if you don't have the haskell toolchain installed, run
@@ -17,6 +19,7 @@ to get ghcup and install the tools.
 ```shell
 ghci
 ghci :l /src/CodeBaseLibrary
+-- you can now use any function defined in the given file.
 ghci map' (+1) [1..10]
 ghci filter' even [1..10]
 ghci filter' (\x -> (mod x 2) == 0) [1..10]
@@ -26,7 +29,8 @@ ghci applyFuncTwice (+3) 2
 - If you change code inside /src/CodeBaseLibrary and want to test it, just use
   :r /src/CodeBaseLibrary inside the repl to reload the file.
 
-- compile a cabal project using
+
+# compile haskell project using cabal
 ```shell
 cabal build
 cabal run

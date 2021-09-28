@@ -146,10 +146,8 @@ collatzSeq x
   | even x = x : collatzSeq (x `div` 2)
   | otherwise = x : collatzSeq ((x * 3) + 1)
 
-
 -- What to do if some functions are Int instead of Num?
 -- length returns an Int instead of a Num a for historical reasons. If we wanted to return a more general Num a, we could have used fromIntegral on the resulting length.
-
 
 -- currying:
 -- These two are equal! That's why the type declaration always uses a -> b -> c
@@ -159,3 +157,6 @@ addThree' x y z = x + y + z
 
 addThree'' :: (Num a) => a -> a -> a -> a
 addThree'' = \x -> \y -> \z -> x + y + z
+
+-- TODO(pierre): continue here with foldl.
+-- http://learnyouahaskell.com/higher-order-functions
