@@ -158,5 +158,116 @@ addThree' x y z = x + y + z
 addThree'' :: (Num a) => a -> a -> a -> a
 addThree'' = \x -> \y -> \z -> x + y + z
 
--- TODO(pierre): continue here with foldl.
--- http://learnyouahaskell.com/higher-order-functions
+-- fold: starting with a value and a binary function (function that takes two
+-- arguments). Then we apply the value and the first(or last) value of the list
+-- to the binary function. We then take the result and apply it to the next
+-- first or last value of the list. etc.. until we finished with the list.
+-- foldl -> start with first elem of list foldr -> start with last elem of list.
+-- initial value is also called "accumulator".
+-- TODO(pierre): check base code for implementation.
+-- foldl' :: (a -> a -> b) -> a -> [a] -> b
+-- foldl' _ x [] = id(x)
+-- foldl' f x (y:ys) = f (f x y) (foldl' ys)
+
+sum' :: (Num a) => [a] -> a
+sum' xs = foldl (\acc x -> acc + x) 0 xs
+
+-- Anyhoo, let's implement another function with a left fold before moving on to
+-- right folds. I'm sure you all know that elem checks whether a value is part
+-- of a list so I won't go into that again (whoops, just did!). Let's implement
+-- it with a left fold.
+-- NOTE: really weird that left and right fold has the acc and x swapped?!
+elem'' :: (Eq a) => a -> [a] -> Bool
+elem'' y ys = foldl (\acc x -> if x == y then True else acc) False ys
+
+-- map with foldr goes from last elem and applies function to each elem and
+-- current accumulator
+map''' f xs = foldr (\x acc -> f x : acc) [] xs
+
+-- map with foldl
+map'''' f xs = foldl (\acc x -> acc ++ [f x]) [] xs
+
+-- NOTE: pref x:xs notation over xs ++ x since appending to linked list needs
+-- full iteration through it
+
+-- folds together with maps and filters are the most often used functions in
+-- functional programming.
+-- foldl1 and foldr1 -> drop the initial value for accumulator.
+
+-- max with foldl
+maximum' (x : xs) = foldl (\acc x -> if x > acc then x else acc) x xs
+
+-- max with foldl1
+maximum'' xs = foldl1 (\acc x -> if x > acc then x else acc) xs
+
+-- implements sum with foldl1 and partial application of + function
+sumFold :: (Num a) => [a] -> a
+sumFold = foldl1 (+)
+
+-- scanl -> foldl while writing all acculumators in the resulting list
+-- scanr, scanl1 scanr1 equal to foldr, foldl1, foldr1
+-- result will be in the last elem of the list.
+a = scanl (\acc x -> acc + x) 0 [1 .. 10]
+
+-- result is equal to foldl
+ab = last (scanl (\acc x -> acc + x) 0 [1 .. 10])
+
+abc = foldl (\acc x -> acc + x) 0 [1 .. 10]
+
+-- head -> first elem
+-- tail -> all but first elem
+-- init -> all but last elem
+-- last -> last elem
+aa = (+ 1)
+
+bb = (+ 2)
+
+-- $ is used to make rhs of operator right associative (default is left
+-- associative). Pretty useful to avoid having to write to many parentheses. f $
+-- g x basicly puts a ( before g and ) after x.
+-- f $ g x is equal to f ( g x)
+-- sum (filter (> 10) (map (*2) [2..10])) is equal to
+-- sum $ filter (> 10) $ map (*2) [2..10]
+
+-- function composition f compose g (x) = f (g (x))
+-- required that f and g take the same amount of arguments. And return a value
+-- of a type that the other one can use.
+-- Say we have a list of numbers and we want to turn them all into negative
+-- numbers. One way to do that would be to get each number's absolute value and
+-- then negate it, like so:
+double = (* 2)
+
+negateList = map (double . negate . abs) [1, -3, -100, 5, 4, 22]
+
+-- partially applied function combined with composition:
+abcd = sum (replicate 5 (max 6.7 8.9))
+
+-- whatever max takes will be applied to max 6.7, then replicate 5 will be
+-- called on the result and them sum will be called on the result.
+abcde x = sum . replicate 5 . max 6.7 $ x
+
+-- equal to (because of currying)
+abcdef = sum . replicate 5 . max 6.7
+
+-- NOTE: don't overdo composition without including let bindings.
+-- example:
+-- In the section about maps and filters, we solved a problem of finding the sum of
+-- all odd squares that are smaller than 10,000. Here's what the solution looks
+-- like when put into a function.
+oddSquareSum :: Integer
+oddSquareSum = sum (takeWhile (< 10000) (filter odd (map (^ 2) [1 ..])))
+
+-- Being such a fan of function composition, I would have probably written that
+-- like this:
+oddSquareSum' :: Integer
+oddSquareSum' = sum . takeWhile (< 10000) . filter odd . map (^ 2) $ [1 ..]
+
+-- However, if there was a chance of someone else reading that code, I would have
+-- written it like this:
+oddSquareSum'' :: Integer
+oddSquareSum'' =
+  let oddSquares = filter odd $ map (^ 2) [1 ..]
+      belowLimit = takeWhile (< 10000) oddSquares
+   in sum belowLimit
+
+-- modules: logical grouping of functions, types and typeclasses.
