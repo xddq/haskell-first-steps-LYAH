@@ -270,4 +270,6 @@ oddSquareSum'' =
       belowLimit = takeWhile (< 10000) oddSquares
    in sum belowLimit
 
--- modules: logical grouping of functions, types and typeclasses.
+
+-- finished with everything including http://learnyouahaskell.com/higher-order-functions
+-- continue with /modules in CodeModules.hs
