@@ -115,7 +115,7 @@ tuplesFromList = span (< 7) [4 .. 10]
 
 -- break -> somewhat similar to span. breaks list in two tuples as soon as
 -- predicate is true. span p === break (not . p)
-tuplesFromList = break (not . (< 7)) [4 .. 10]
+tuplesFromList' = break (not . (< 7)) [4 .. 10]
 
 -- sort -> sorts list. requires element to be of Ord typeclass (todo: check Ord
 -- typeclass definition?). Basicly requires element to be able to be ordered.
@@ -142,10 +142,15 @@ tailsTest = tails [1 .. 4]
 search :: (Eq a) => [a] -> [a] -> Bool
 search needle haystack =
   let nlen = length needle
-   in foldl
-        (\acc x ->
-           if take nlen x == needle
-             then True
-             else acc)
-        False
-        (tails haystack)
+   in foldl (\acc x -> (take nlen x == needle) || acc) False (tails haystack)
+
+-- this is equal to the isInfixOf function
+equalTest =
+  (==) (search [1, 2] [3, 4, 5, 1, 2]) (isInfixOf [1, 2] [3, 4, 5, 1, 2])
+
+-- isPrefixOf -> checks if first entry of list does match the given list.
+isPrefixOfTest = isPrefixOf [1, 2] [1, 2, 3, 4]
+
+-- isSuffixOf -> checks if last entry of list does match the given list.
+isSuffixOfTest = isSuffixOf [3, 4] [1, 2, 3, 4] -- TODO(pierre): continue with book. don't go through all examples. Just try to
+-- udnerstand the gist.
