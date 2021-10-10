@@ -4,16 +4,17 @@
 -- ghci> :m + Data.List Data.Map Data.Set
 -- selectively import functions: (only imports nub and sort for data.list)
 -- importing all BUT specific ones:
-import qualified Data.Char as C
+import qualified Data.Char as Char
 
 -- to avoid name clashes qualified/full imports are used.
 -- import qualified Data.Map
 -- since Data.Map prefix before every function is quite big, we can alias the
 -- full import. And then write M.funName instead.
-import qualified Data.Function as F
+import qualified Data.Function as Function
 import Data.List (nub, sort)
 import Data.List hiding (nub)
-import qualified Data.Map as M
+import qualified Data.Map as Map
+import qualified Data.Set as Set
 
 -- put elem between each elem in list with intersperse
 putA = intersperse "A" ["test1", "test2", "test3", "test4"]
@@ -300,36 +301,36 @@ xs' = [[5, 4, 5, 4, 4], [1, 2, 3], [3, 5, 4, 3], [], [2], [2, 2]]
 -- book if needed. http://learnyouahaskell.com/modules#loading-modules
 -- (Data.Char)
 -- checks whether all characters are /[0-9]|[a-z]|[A-Z]/
-allAlphaNum = all C.isAlphaNum "behuwqheq1231"
+allAlphaNum = all Char.isAlphaNum "behuwqheq1231"
 
 words' = words "hey guys its me"
 
-wordsWithIsSpace = groupBy ((==) `on` C.isSpace) "hey guys its me"
+wordsWithIsSpace = groupBy ((==) `on` Char.isSpace) "hey guys its me"
 
 -- will return ["hey"," ","guys"," ","its"," ","me"]. To make it equal to the
 -- output from words which is ["hey","guys","its","me"] we need to filter all
--- entries for which C.isSpace is true for all chars.
-wordsWithIsSpace' = filter (\x -> not $ all C.isSpace x) wordsWithIsSpace
+-- entries for which Char.isSpace is true for all chars.
+wordsWithIsSpace' = filter (\x -> not $ all Char.isSpace x) wordsWithIsSpace
 
 wordsWithIsSpace'' =
-  filter (\x -> not $ all C.isSpace x) $
-  groupBy ((==) `on` C.isSpace) "hey guys its me"
+  filter (\x -> not $ all Char.isSpace x) $
+  groupBy ((==) `on` Char.isSpace) "hey guys its me"
 
 -- solution was this?
 wordsWithIsSpace''' =
-  filter (not . any C.isSpace) . groupBy ((==) `on` C.isSpace) $
+  filter (not . any Char.isSpace) . groupBy ((==) `on` Char.isSpace) $
   "hey guys its me"
 
 -- can use point-free-style. src:
 -- http://learnyouahaskell.com/higher-order-functions
--- basicly 'not . all C.isSpace' is equal to: not (all C.isSpace) $ x. But with the
+-- basicly 'not . all Char.isSpace' is equal to: not (all Char.isSpace) $ x. But with the
 -- point-free-style we use currying to drop the $ x in the declaration. It will
--- still be applied as if it was there (because C.isSpace takes another argument
+-- still be applied as if it was there (because Char.isSpace takes another argument
 -- that we don't provide)
 -- the clean point-free-style would be: now we can call this fn with an arg and
 -- get a result thats equal to 'words' arg
 wordsWithIsSpacePointFree =
-  filter (not . all C.isSpace) . groupBy ((==) `on` C.isSpace)
+  filter (not . all Char.isSpace) . groupBy ((==) `on` Char.isSpace)
 
 -- NOTE: in general if we prodive anonymous/lambda functions we can use the
 -- point-free-style if we have only one argument and our function inside
@@ -340,7 +341,7 @@ notPointFree = filter (\x -> x > 3) [1 .. 10]
 pointFree = filter (> 3) [1 .. 10]
 
 wordsWithIsSpaceAdapted =
-  filter (not . all C.isSpace) . groupBy ((==) `on` C.isSpace) $
+  filter (not . all Char.isSpace) . groupBy ((==) `on` Char.isSpace) $
   "hey guys its me"
 
 -- there are types for different chars. The Type of this enumeration is
@@ -355,27 +356,121 @@ wordsWithIsSpaceAdapted =
 -- OtherPunctuation
 -- digitToInt -> convert char to int. allowed range is hex values.
 -- intToDigit -> converts int to char. allowed range is 0..15 (hex values)
-digitToInt' = C.digitToInt 'a'
+digitToInt' = Char.digitToInt 'a'
 
-intToDigit' = C.intToDigit 14
--- ord -> convert char to number based on ascii
--- chr -> number to char base don ascii
--- samples: (use ':m + Data.Char' in ghci)
+intToDigit' = Char.intToDigit 14
+
+-- ord -> convert char to number
+-- chr -> number to char
 -- Prelude Data.Char> ord '3'
 -- 51
 -- Prelude Data.Char> ord 'a'
 -- 97
--- Prelude Data.Char> ord 'A'
--- 65
--- Prelude Data.Char> ord 'Z'
--- 90
 -- Prelude Data.Char> chr 1
 -- '\SOH'
 -- Prelude Data.Char> chr 90
 -- 'Z'
--- Prelude Data.Char> chr 66
--- 'B'
--- "The Caesar cipher is a primitive method of encoding messages by shifting
+-- "The Char.esar cipher is a primitive method of encoding messages by shifting
 -- each character in them by a fixed number of positions in the alphabet. We can
--- easily create a sort of Caesar cipher of our own, only we won't constrict
+-- easily create a sort of Char.esar cipher of our own, only we won't constrict
 -- ourselves to the alphabet."
+-- encodes given list of strings with given offset
+-- encode offset = map Char.chr . map (+ offset) . map Char.ord
+encode offset = map (Char.chr . (+ offset) . Char.ord)
+
+-- solution:
+encode' :: Int -> String -> String
+encode' shift msg =
+  let ords = map Char.ord msg
+      shifted = map (+ shift) ords
+   in map Char.chr shifted
+
+-- decodes given list of strings with given offset
+-- NOTE: instead of -x use subtract x for infix variant.
+-- src: https://stackoverflow.com/questions/28858161/why-doesnt-minus-work-for-operator-sections
+decode offset = map (Char.chr . subtract offset . Char.ord)
+
+-- solution:
+-- NOTE: using previously created functions to compose similar or opposite
+-- functionality is often easier/faster/smaller.
+decode' shift msg = encode' (negate shift) msg
+
+-- DATA.MAP
+-- associative maps (often called dictonaries). Implemented as balanced binary
+-- tree -> Find/Delete/Update -> O(log n). src: https://hackage.haskell.org/package/containers-0.4.0.0/docs/Data-Map.html
+-- NOTE: always use map for key-value associations.
+-- TODO(pierre): Why is it implemented as balanced tree instead of hashmap?
+-- creates an empty map, inserts key 3 with value "hello maps" into it.
+placeholderMap = Map.insert 3 "hello maps" Map.empty
+
+-- creates singleton (map with one entry), inserts key 9 with value 2 into this
+-- singleton and converts the map to a list.
+placeHodlerMap1 = Map.toList . Map.insert 9 2 $ Map.singleton 4 3
+
+-- map for examples
+phoneBook =
+  [ ("betty", "555-2938")
+  , ("betty", "342-2492")
+  , ("bonnie", "452-2928")
+  , ("patsy", "493-2928")
+  , ("patsy", "943-2929")
+  , ("patsy", "827-9162")
+  , ("lucille", "205-2928")
+  , ("wendy", "939-8282")
+  , ("penny", "853-2492")
+  , ("penny", "555-2111")
+  ]
+
+-- without handling duplicates
+resultingPhoneBookMap = Map.fromList phoneBook
+
+-- since maps have no duplicates we can use Maps.fromListWith to supply a
+-- function that will be executed. It will get the two values that we get for a
+-- collision of keys.
+resultingMapWithDups list =
+  Map.fromListWith (\val1 val2 -> val1 ++ ", " ++ val2) list
+
+-- find value from Map
+placeHolderMap1 key map = Map.lookup key map
+
+-- add values up for all keys from given list and transform to map
+addValuesForKey list = Map.fromListWith (+) list
+
+-- get max value for given key from given list and transform to map
+maxValuesForKey list = Map.fromListWith max list
+
+-- DATA.SET
+-- all elements from set are unique. Implemented as balanced tree (same as
+-- maps). TODO(pierre): figure out differences for sets and maps in hakell.
+-- I guess mostly for intersection, difference, union operations?
+set1 =
+  Set.fromList
+    "I just had an anime dream. Anime... Reality... Are they so different?"
+
+set2 =
+  Set.fromList
+    "The old man left his garbage can out and now his trash is all over my lawn!"
+
+intersectionSet = Set.intersection set1 set2
+
+-- returns values that are inside set1 and not in set2
+differenceSet1 = Set.difference set1 set2
+
+-- returns values that are inside set2 and not in set1
+differenceSet2 = Set.difference set2 set1
+
+-- returns values that are inside set1 and set2
+unionSet = Set.union set1 set2
+
+-- What is the use case of sets?
+-- -> Mostly to remove duplicates from lists by converting them to a set and
+-- then back to a list. We do this because this is faster than calling nub on
+-- big lists. We can only do this trick if the ordering of the resulting list
+-- does not matter and the elements of the list are in the Ord typeclass. For
+-- nub they only have to be in the Eq typeclass. This is because Sets and Maps
+-- are implemented using balanced trees, which are ordered.
+removeDuplicates :: Ord a => [a] -> [a]
+removeDuplicates = Set.toList . Set.fromList
+
+-- TODO(pierre): continue with: Making our own Modules
+placeHolderModules
