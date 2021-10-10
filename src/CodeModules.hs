@@ -3,15 +3,16 @@
 -- imports all functions for Data.List, Data.map and Data.Set
 -- ghci> :m + Data.List Data.Map Data.Set
 -- selectively import functions: (only imports nub and sort for data.list)
-import Data.List (nub, sort)
-
 -- importing all BUT specific ones:
-import Data.List hiding (nub)
+import qualified Data.Char as C
 
 -- to avoid name clashes qualified/full imports are used.
 -- import qualified Data.Map
 -- since Data.Map prefix before every function is quite big, we can alias the
 -- full import. And then write M.funName instead.
+import qualified Data.Function as F
+import Data.List (nub, sort)
+import Data.List hiding (nub)
 import qualified Data.Map as M
 
 -- put elem between each elem in list with intersperse
@@ -190,7 +191,7 @@ getLines = lines "hello\nstring\nworld in haskell"
 makeText = unlines getLines
 
 -- words -> split lines of text into elements, separated by ' '.
-makeWords = words ["hello how are you doing?"]
+makeWords = words "hello how are you doing?"
 
 -- unwords -> joint elements of list into a string, separated by ' '.
 unWords = unwords makeWords
@@ -288,47 +289,47 @@ xs' = [[5, 4, 5, 4, 4], [1, 2, 3], [3, 5, 4, 3], [], [2], [2, 2]]
 -- compare returns LT, EQ, or GT based on x and y. This makes sure we run
 -- compare (length xs) (length ys) for sorting the given list. Sorts lt,eq,gt
 -- order(asc).
-sortByLengthAsc = sortBy (compare `on` length)
-
+-- sortByLengthAsc = sortBy (compare `F.on` length)
 -- To sort desc we can use 'Down'. Down from Ord.Down: "If a has an Ord instance
 -- associated with it then comparing two values thus wrapped will give you the
 -- opposite of their normal sort order."
-sortByLengthDesc = sortBy (compare `on` Down . length)
-
+-- src: https://stackoverflow.com/questions/47809765/haskell-negate-a-value-of-type-ordering
+-- sortByLengthDesc = sortBy (flip compare `on` length)
 -- Data.Char -> Gives us stuff to operate on characters. Also useful for strings
 -- since they are just lists of characters. Note: skip most, just check docs or
 -- book if needed. http://learnyouahaskell.com/modules#loading-modules
 -- (Data.Char)
 -- checks whether all characters are /[0-9]|[a-z]|[A-Z]/
-allAlphaNum = all isAlphaNum "behuwqheq1231"
+allAlphaNum = all C.isAlphaNum "behuwqheq1231"
 
 words' = words "hey guys its me"
 
-wordsWithIsSpace = groupBy ((==) `on` isSpace) "hey guys its me"
+wordsWithIsSpace = groupBy ((==) `on` C.isSpace) "hey guys its me"
 
 -- will return ["hey"," ","guys"," ","its"," ","me"]. To make it equal to the
 -- output from words which is ["hey","guys","its","me"] we need to filter all
--- entries for which isSpace is true for all chars.
-wordsWithIsSpace' = filter (\x -> not $ all isSpace x) wordsWithIsSpace
+-- entries for which C.isSpace is true for all chars.
+wordsWithIsSpace' = filter (\x -> not $ all C.isSpace x) wordsWithIsSpace
 
 wordsWithIsSpace'' =
-  filter (\x -> not $ all isSpace x) $
-  groupBy ((==) `on` isSpace) "hey guys its me"
+  filter (\x -> not $ all C.isSpace x) $
+  groupBy ((==) `on` C.isSpace) "hey guys its me"
 
 -- solution was this?
 wordsWithIsSpace''' =
-  filter (not . any isSpace) . groupBy ((==) `on` isSpace) $ "hey guys its me"
+  filter (not . any C.isSpace) . groupBy ((==) `on` C.isSpace) $
+  "hey guys its me"
 
 -- can use point-free-style. src:
 -- http://learnyouahaskell.com/higher-order-functions
--- basicly 'not . all isSpace' is equal to: not (all isSpace) $ x. But with the
+-- basicly 'not . all C.isSpace' is equal to: not (all C.isSpace) $ x. But with the
 -- point-free-style we use currying to drop the $ x in the declaration. It will
--- still be applied as if it was there (because isSpace takes another argument
+-- still be applied as if it was there (because C.isSpace takes another argument
 -- that we don't provide)
 -- the clean point-free-style would be: now we can call this fn with an arg and
 -- get a result thats equal to 'words' arg
 wordsWithIsSpacePointFree =
-  filter (not . all isSpace) . groupBy ((==) `on` isSpace)
+  filter (not . all C.isSpace) . groupBy ((==) `on` C.isSpace)
 
 -- NOTE: in general if we prodive anonymous/lambda functions we can use the
 -- point-free-style if we have only one argument and our function inside
@@ -339,7 +340,8 @@ notPointFree = filter (\x -> x > 3) [1 .. 10]
 pointFree = filter (> 3) [1 .. 10]
 
 wordsWithIsSpaceAdapted =
-  filter (not . all isSpace) . groupBy ((==) `on` isSpace) $ "hey guys its me"
+  filter (not . all C.isSpace) . groupBy ((==) `on` C.isSpace) $
+  "hey guys its me"
 
 -- there are types for different chars. The Type of this enumeration is
 -- GeneralCategory. There are 31 categories which can be used. e.g.
@@ -353,26 +355,27 @@ wordsWithIsSpaceAdapted =
 -- OtherPunctuation
 -- digitToInt -> convert char to int. allowed range is hex values.
 -- intToDigit -> converts int to char. allowed range is 0..15 (hex values)
-digitToInt' = digitToInt 'a'
+digitToInt' = C.digitToInt 'a'
 
-intToDigit' = intToDigit 14
+intToDigit' = C.intToDigit 14
 -- ord -> convert char to number based on ascii
 -- chr -> number to char base don ascii
--- samples:
--- use ':m + Data.List Data.Function Data.Ord Data.Char' in ghci. only Data.Char
--- is required
--- here.
--- Prelude Data.List Data.Function Data.Ord Data.Char> ord '3'
+-- samples: (use ':m + Data.Char' in ghci)
+-- Prelude Data.Char> ord '3'
 -- 51
--- Prelude Data.List Data.Function Data.Ord Data.Char> ord 'a'
+-- Prelude Data.Char> ord 'a'
 -- 97
--- Prelude Data.List Data.Function Data.Ord Data.Char> ord 'A'
+-- Prelude Data.Char> ord 'A'
 -- 65
--- Prelude Data.List Data.Function Data.Ord Data.Char> ord 'Z'
+-- Prelude Data.Char> ord 'Z'
 -- 90
--- Prelude Data.List Data.Function Data.Ord Data.Char> chr 1
+-- Prelude Data.Char> chr 1
 -- '\SOH'
--- Prelude Data.List Data.Function Data.Ord Data.Char> chr 90
+-- Prelude Data.Char> chr 90
 -- 'Z'
--- Prelude Data.List Data.Function Data.Ord Data.Char> chr 66
+-- Prelude Data.Char> chr 66
 -- 'B'
+-- "The Caesar cipher is a primitive method of encoding messages by shifting
+-- each character in them by a fixed number of positions in the alphabet. We can
+-- easily create a sort of Caesar cipher of our own, only we won't constrict
+-- ourselves to the alphabet."
