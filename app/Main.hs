@@ -23,5 +23,5 @@ main = do
   Prelude.print (plusTwo 3)
   -- try out Cuboid submodules of own Geometry module.
   Prelude.putStrLn "calculating area and volume of cuboid with values: 3 4 5"
-  Prelude.putStrLn ("volume" Prelude.++ Prelude.show (Cuboid.volume 3 4 5))
-  Prelude.putStrLn ("area" Prelude.++ Prelude.show (Cuboid.area 3 4 5))
+  Prelude.putStrLn ("volume: " Prelude.++ Prelude.show (Cuboid.volume 3 4 5))
+  Prelude.putStrLn ("area: " Prelude.++ Prelude.show (Cuboid.area 3 4 5))
