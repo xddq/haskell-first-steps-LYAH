@@ -22,7 +22,7 @@ maintainer:         git@pierrefhapp.dev
 extra-source-files: CHANGELOG.md
 
 library
-    exposed-modules:  MyLib FirstSteps CodeBaseLibrary
+    exposed-modules:  FirstSteps CodeBaseLibrary Geometry.Cube Geometry.Cuboid
 
     -- Modules included in this library but not exported.
     -- other-modules:
