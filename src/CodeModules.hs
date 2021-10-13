@@ -5,7 +5,6 @@
 -- selectively import functions: (only imports nub and sort for data.list)
 -- importing all BUT specific ones:
 import qualified Data.Char as Char
-
 -- to avoid name clashes qualified/full imports are used.
 -- import qualified Data.Map
 -- since Data.Map prefix before every function is quite big, we can alias the
@@ -92,12 +91,12 @@ splitAtTest = splitAt 2 [1, 2, 3, 4, 5]
 -- the given predicate.  stops at first "false"
 -- takes first 4 values that are above 25 from a given list. then increments
 -- each value by one and calculates the sum of these values.
-takeWhileTest = sum . map (+ 1) . take 4 $ takeWhile (> 25) [40,39 .. 1]
+takeWhileTest = sum . map (+ 1) . take 4 $ takeWhile (> 25) [40, 39 .. 1]
 
 -- dropWhile -> drops first X values from a list. Drops value if given predicate
 -- does return false. Stops dropping as soon as first predicate application
 -- returns true.
-dropWhileTest = sum . map (+ 1) . take 5 $ dropWhile (> 25) [40,39 .. 1]
+dropWhileTest = sum . map (+ 1) . take 5 $ dropWhile (> 25) [40, 39 .. 1]
 
 dropFirstWord = tail $ dropWhile (/= ' ') "This is a test"
 
@@ -126,7 +125,7 @@ tuplesFromList' = break (not . (< 7)) [4 .. 10]
 -- sort -> sorts list. requires element to be of Ord typeclass (todo: check Ord
 -- typeclass definition?). Basicly requires element to be able to be ordered.
 -- NOTE: sorts asc.
-sortList = sort [5,4 .. 1]
+sortList = sort [5, 4 .. 1]
 
 -- group -> takes list and returns list of list. Takes current value and puts it
 -- in a list. Takes next value and puts it in the same list if it is equal to
@@ -241,19 +240,19 @@ nubDifferentEq = nubBy (\x y -> (x > 1) == (y > 1)) [1, 2, 3, 4]
 -- the same type and return True if it considers them equal by its standards."
 groupByDifferentEq =
   let values =
-        [ -4.3
-        , -2.4
-        , -1.2
-        , 0.4
-        , 2.3
-        , 5.9
-        , 10.5
-        , 29.1
-        , 5.3
-        , -2.4
-        , -14.5
-        , 2.9
-        , 2.3
+        [ -4.3,
+          -2.4,
+          -1.2,
+          0.4,
+          2.3,
+          5.9,
+          10.5,
+          29.1,
+          5.3,
+          -2.4,
+          -14.5,
+          2.9,
+          2.3
         ]
    in groupBy (\x y -> (x > 0) == (y > 0)) values
 
@@ -266,19 +265,19 @@ f `on` g = \x y -> f (g x) (g y)
 -- reads: groupBy on equality where x > 0 is equal to y > 0.
 groupByDifferentEq' =
   let values =
-        [ -4.3
-        , -2.4
-        , -1.2
-        , 0.4
-        , 2.3
-        , 5.9
-        , 10.5
-        , 29.1
-        , 5.3
-        , -2.4
-        , -14.5
-        , 2.9
-        , 2.3
+        [ -4.3,
+          -2.4,
+          -1.2,
+          0.4,
+          2.3,
+          5.9,
+          10.5,
+          29.1,
+          5.3,
+          -2.4,
+          -14.5,
+          2.9,
+          2.3
         ]
    in groupBy ((==) `on` (> 0)) values
 
@@ -314,12 +313,12 @@ wordsWithIsSpace' = filter (\x -> not $ all Char.isSpace x) wordsWithIsSpace
 
 wordsWithIsSpace'' =
   filter (\x -> not $ all Char.isSpace x) $
-  groupBy ((==) `on` Char.isSpace) "hey guys its me"
+    groupBy ((==) `on` Char.isSpace) "hey guys its me"
 
 -- solution was this?
 wordsWithIsSpace''' =
   filter (not . any Char.isSpace) . groupBy ((==) `on` Char.isSpace) $
-  "hey guys its me"
+    "hey guys its me"
 
 -- can use point-free-style. src:
 -- http://learnyouahaskell.com/higher-order-functions
@@ -342,7 +341,7 @@ pointFree = filter (> 3) [1 .. 10]
 
 wordsWithIsSpaceAdapted =
   filter (not . all Char.isSpace) . groupBy ((==) `on` Char.isSpace) $
-  "hey guys its me"
+    "hey guys its me"
 
 -- there are types for different chars. The Type of this enumeration is
 -- GeneralCategory. There are 31 categories which can be used. e.g.
@@ -409,16 +408,16 @@ placeHodlerMap1 = Map.toList . Map.insert 9 2 $ Map.singleton 4 3
 
 -- map for examples
 phoneBook =
-  [ ("betty", "555-2938")
-  , ("betty", "342-2492")
-  , ("bonnie", "452-2928")
-  , ("patsy", "493-2928")
-  , ("patsy", "943-2929")
-  , ("patsy", "827-9162")
-  , ("lucille", "205-2928")
-  , ("wendy", "939-8282")
-  , ("penny", "853-2492")
-  , ("penny", "555-2111")
+  [ ("betty", "555-2938"),
+    ("betty", "342-2492"),
+    ("bonnie", "452-2928"),
+    ("patsy", "493-2928"),
+    ("patsy", "943-2929"),
+    ("patsy", "827-9162"),
+    ("lucille", "205-2928"),
+    ("wendy", "939-8282"),
+    ("penny", "853-2492"),
+    ("penny", "555-2111")
   ]
 
 -- without handling duplicates
@@ -471,6 +470,3 @@ unionSet = Set.union set1 set2
 -- are implemented using balanced trees, which are ordered.
 removeDuplicates :: Ord a => [a] -> [a]
 removeDuplicates = Set.toList . Set.fromList
-
--- TODO(pierre): continue with: Making our own Modules
-placeHolderModules
