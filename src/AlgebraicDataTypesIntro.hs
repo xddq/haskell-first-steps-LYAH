@@ -73,6 +73,3 @@ testBasePoint = basePoint
 -- point-free-style notation. Could also use:
 -- testBaseCircle radius = baseCircle (Radius radius)
 testBaseCircle = baseCircle . Radius
-
--- 2) RECORD SYNTAX
--- TODO(pierre): continue here. Start with "record syntax"!
