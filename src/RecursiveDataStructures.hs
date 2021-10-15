@@ -73,18 +73,24 @@ createBaseTree x = Node x EmptyTree EmptyTree
 
 -- three cases: eq -> drop, bigger -> right, smaller -> left
 -- Notation: first BinaryTree(a) is the left leaf and second BinaryTree(a) is the right leaf.
+-- my solution:
+-- NOTE: If we use compare it is exhaustive pattern matched. If we use > < ==,
+-- this is not the case. E.g. for floats maybe? Idk?
+-- src: https://github.com/haskell/error-messages/issues/20
+-- src: https://www.reddit.com/r/haskell/comments/q8lomp/beginner_question_warnings_in_binary_tree/
 insertInBinaryTree :: (Ord a) => BinaryTree a -> a -> BinaryTree a
-insertInBinaryTree EmptyTree input = Node input EmptyTree EmptyTree
-insertInBinaryTree (Node x leftTree rightTree) input
-  | input == x = Node x leftTree rightTree
-  | input < x =
-    if isEmptyTree leftTree
-      then Node x (createBaseTree input) rightTree
-      else Node x (insertInBinaryTree leftTree input) rightTree
-  | input > x =
-    if isEmptyTree rightTree
-      then Node x leftTree (createBaseTree input)
-      else Node x leftTree (insertInBinaryTree rightTree input)
+insertInBinaryTree EmptyTree input = createBaseTree input
+insertInBinaryTree (Node x leftTree rightTree) input = case compare input x of
+  EQ -> Node x leftTree rightTree
+  LT -> Node x (insertInBinaryTree leftTree input) rightTree
+  GT -> Node x leftTree (insertInBinaryTree rightTree input)
+
+valueInTree :: (Ord a) => BinaryTree a -> a -> Bool
+valueInTree EmptyTree _ = False
+valueInTree (Node x leftTree rightTree) value = case compare value x of
+  EQ -> True
+  LT -> valueInTree leftTree value
+  GT -> valueInTree rightTree value
 
 -- generate some numbers to insert into tree
 genNumbers = map (\x -> if even x then x + 10 else x) [1 .. 5]
@@ -92,6 +98,12 @@ genNumbers = map (\x -> if even x then x + 10 else x) [1 .. 5]
 -- insert all these numbers into BinaryTree with base 10
 -- insertNumbersIntoTree =
 --   foldl (\acc x -> insertInBinaryTree acc x) (createBaseTree 10) genNumbers
-
+-- insertNumbersIntoTree =
+--   foldl (\acc x -> insertInBinaryTree acc x) (createBaseTree 10) genNumbers
+-- NOTE: since insertInBinaryTree is a function that takes two arguments (the tree and
+-- then the input) we can directly invoke it with acc and x as params without
+-- defining a separate lambda.
 insertNumbersIntoTree =
-  foldl (\acc x -> insertInBinaryTree acc x) (createBaseTree 10) genNumbers
+  foldl insertInBinaryTree (createBaseTree 10) genNumbers
+
+-- CONTINUE WITH Typeclasses 102 (Typeclasses.hs)
