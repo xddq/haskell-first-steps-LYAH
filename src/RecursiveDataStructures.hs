@@ -2,6 +2,16 @@
 -- for type definition)
 -- data list' a :: a list'
 -- either empty list or some value with a list of values of same type.
+-- NOTE: using BinaryTree(..) exports all value constructors!
+module RecursiveDataStructures
+  ( insertInBinaryTree,
+    insertNumbersIntoTree,
+    genNumbers,
+    createBaseTree,
+    BinaryTree(..)
+  )
+where
+
 data List' a = TestEmpty | Cons a (List' a) deriving (Show, Eq, Ord, Read)
 
 -- cons is ':' in normal lists.
