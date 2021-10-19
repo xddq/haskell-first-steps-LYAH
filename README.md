@@ -13,6 +13,13 @@ curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org | sh
 ```
 to get ghcup and install the tools.
 
+## semantics of my comments
+- normally I use ="" for somewhat translations if I don't understand stuff.
+- normally I use -> for links between topics or when I infer/conclude something.
+  Somewhat late I noticed that -> will be pretty confusing since it is haskell
+syntax. There it at some point (started with Typeclasses.ts) -> became --> to
+differ from haskell syntax and semantic.
+
 ## play around with these functions
 - Everything is stored under ./src/CodeBaseLibrary.hs.
 - To execute the functions just open the haskell REPL and load the file.

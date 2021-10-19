@@ -214,4 +214,91 @@ testMapFunctor = fmap (+ 1) sampleMap
 
 
 -- KINDS and SOME-FOO
--- TODO(pierre): continue wiht KINDS and SOME-FOO :]
+-- KINDS -> formally defining how types are applied to type constructors.
+-- KINDS -> type of types.
+-- refresh/reminder: Type constructor (e.g. Either a b) can be partially applied
+-- Either String which results in a type constructor that takes one more
+-- argument to become a concrete type.
+-- NOTE: not required to fully understand it, but will/would be helpful.
+-- NOTE(pierre): can get info about kind in ghci with :k Type, e.g. :k Int
+-- Meaning:
+-- * --> concrete type
+-- * -> * --> type takes one parameter to become a concrete type (e.g. Maybe)
+-- * -> * -> * --> type takes two parameters to become a concrete type (e.g.
+-- Either)
+-- Types and Kinds have parallels, but are different.
+-- Parallel: - both can be partially applied --> :k Either Int :t isUpper 'A'
+-- Different: - kinds are types/labels of types
+-- - types are types/labels of values
+-- TODO(pierre): read through that explanation again. I don't understand the "We
+-- know it has to produce a concrete type because it's used as the type of a
+-- value in a function" part...
+-- - How/Where is it used as the type of a value? in f a? f b???
+--
+-- "   class Functor f where
+--         fmap :: (a -> b) -> f a -> f b
+-- we see that the f type variable is used as a type that takes one concrete type
+-- to produce a concrete type. We know it has to produce a concrete type because
+-- it's used as the type of a value in a function. And from that, we can deduce
+-- that types that want to be friends with Functor have to be of kind * -> *."
+--
+-- "Types that want to be friends with Functor have to be of Kind * -> *"
+-- --> This makes sense. Since f a and f b are concrete types f has to be of Kind * -> *
+-- to work.
+
+class Tofu t where
+    tofu :: j a -> t a j
+-- Kind of t is * -> * -> * !!!WRONG
+-- Kind of t is * -> (* -> *) -> *
+-- j is a type that takes one parameter to become a concrete type. E.g. Maybe
+-- Int
+-- t is a type that takes two parameters. E.g. Either
+-- The first parameter is a value and the second parameter is a Type that takes
+-- a parameter to become a conrete type.
+-- So we could make Either an instance of our tofu typeclass.
+-- instance Tofu Either where
+--     tofu j a =  a j
+
+data MatchTofuKind a b = MatchTofuEmpty
+-- solution
+data Frank a b = Frank {frankField :: b a} deriving Show
+-- "How do we know this type has a kind of * -> (* -> *) - > *? Well, fields in
+-- ADTs are made to hold values, so they must be of kind *, obviously. We assume
+-- * for a, which means that b takes one type parameter and so its kind is * ->
+-- *. Now we know the kinds of both a and b and because they're parameters for
+-- Frank, we see that Frank has a kind of * -> (* -> *) -> * The first *
+-- represents a and the (* -> *) represents b. Let's make some Frank values and
+-- check out their types."
+-- NOTE(pierre): The construction of this type kind of goes from left to right
+-- to left. --> First we start on the left because of Tofu t we know from t a j
+-- that the type we are looking for takes two parameters. Then we write data
+-- Typename a b =
+-- Now we see in Tofu t that
+-- - the second parameter of our type takes a parameter to become a concrete type. It has the kind * -> *
+-- - a has kind * to become a concrete type, otherwise j a would not work.
+-- TRICK: now we can use Record syntax to specify the type of our value
+-- constructor.
+-- ValueConstructor (b a)
+-- ValueConstructor {fieldName :: b a} --> now our type has the kind * -> (* -> *) -> *
+-- the last * is because an ADT is always a value and therefore has kind *
+-- MAYBE(pierre): how could we specify this without record syntax?
+data Frank2 a b = Frank2 (b a) deriving Show
+-- examples in ghci:
+-- TODO(pierre): Why does Just "HAHA" fullfill our kind * -> (* -> *) -> *?
+-- Just has kind * -> *. "HAHA" has kind *. Frank will return *
+-- Our type Frank a b which has kind * -> (* -> *) -> *
+-- is implemented as (b a) which means that we have two values for our value
+-- constructor. These values have to have kinds (* -> *) and * (where (*1 -> *2)
+-- -> *3 the types of *2 and *3 must be the same!)
+-- examples: Just 3
+-- *Typeclasses> :t Frank {frankField = Just "HAHA"}
+-- Frank {frankField = Just "HAHA"} :: Frank [Char] Maybe
+-- *Typeclasses> :t Frank2 (Just "HAHA")
+-- Frank2 (Just "HAHA") :: Frank2 [Char] Maybe
+
+
+-- stop here, my brain is melting.
+instance Tofu Frank where
+    tofu x = Frank x
+-- TODO: continue with data Barry. NOTE: don't need to understand everything
+-- here. Perhaps just skip this and check this section later..
