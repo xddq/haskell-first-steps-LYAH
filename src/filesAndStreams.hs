@@ -1,0 +1,4 @@
+-- files and streams
+-- src: http://learnyouahaskell.com/input-and-output
+-- getContents --> reads everything until it receives and EOF(end-of-file)
+-- character.
