@@ -184,9 +184,10 @@ functorMaybeTest = fmap (++ " world") (Just "hello")
 
 -- Functor for trees. tree is the box.
 instance Functor BinaryTree where
-    fmap f EmptyTree = EmptyTree
-    fmap f (Node x leftTree rightTree) = Node (f x) (fmap f leftTree) (fmap f rightTree)
-increaseAllValuesInTree = fmap (+100) insertNumbersIntoTree
+  fmap f EmptyTree = EmptyTree
+  fmap f (Node x leftTree rightTree) = Node (f x) (fmap f leftTree) (fmap f rightTree)
+
+increaseAllValuesInTree = fmap (+ 100) insertNumbersIntoTree
 
 -- Functor for Either. Either is the box.
 -- Functor always takes one type parameter. Either takes two.. So we can use it
@@ -203,7 +204,9 @@ instance Functor (Either a) where
 -- src: https://stackoverflow.com/questions/27197419/haskell-functors
 instance (Ord k) => Functor (Map.Map k) where
   fmap f m = Map.fromList $ map (\(x, y) -> (x, f y)) $ Map.toList m
+
 sampleMap = Map.fromList [(1, 2), (3, 4), (5, 6)]
+
 testMapFunctor = fmap (+ 1) sampleMap
 
 -- ADDITIONAL FUNCTOR LAWS:
@@ -211,7 +214,6 @@ testMapFunctor = fmap (+ 1) sampleMap
 -- same result as boxWithValues.
 -- 2) keeps order from boxWithValue in result
 -- more detail on these later.
-
 
 -- KINDS and SOME-FOO
 -- KINDS -> formally defining how types are applied to type constructors.
@@ -222,9 +224,13 @@ testMapFunctor = fmap (+ 1) sampleMap
 -- NOTE: not required to fully understand it, but will/would be helpful.
 -- NOTE(pierre): can get info about kind in ghci with :k Type, e.g. :k Int
 -- Meaning:
+
 -- * --> concrete type
+
 -- * -> * --> type takes one parameter to become a concrete type (e.g. Maybe)
+
 -- * -> * -> * --> type takes two parameters to become a concrete type (e.g.
+
 -- Either)
 -- Types and Kinds have parallels, but are different.
 -- Parallel: - both can be partially applied --> :k Either Int :t isUpper 'A'
@@ -247,7 +253,8 @@ testMapFunctor = fmap (+ 1) sampleMap
 -- to work.
 
 class Tofu t where
-    tofu :: j a -> t a j
+  tofu :: j a -> t a j
+
 -- Kind of t is * -> * -> * !!!WRONG
 -- Kind of t is * -> (* -> *) -> *
 -- j is a type that takes one parameter to become a concrete type. E.g. Maybe
@@ -260,12 +267,17 @@ class Tofu t where
 --     tofu j a =  a j
 
 data MatchTofuKind a b = MatchTofuEmpty
+
 -- solution
-data Frank a b = Frank {frankField :: b a} deriving Show
+data Frank a b = Frank {frankField :: b a} deriving (Show)
+
 -- "How do we know this type has a kind of * -> (* -> *) - > *? Well, fields in
 -- ADTs are made to hold values, so they must be of kind *, obviously. We assume
+
 -- * for a, which means that b takes one type parameter and so its kind is * ->
--- *. Now we know the kinds of both a and b and because they're parameters for
+
+-- * . Now we know the kinds of both a and b and because they're parameters for
+
 -- Frank, we see that Frank has a kind of * -> (* -> *) -> * The first *
 -- represents a and the (* -> *) represents b. Let's make some Frank values and
 -- check out their types."
@@ -282,23 +294,34 @@ data Frank a b = Frank {frankField :: b a} deriving Show
 -- ValueConstructor {fieldName :: b a} --> now our type has the kind * -> (* -> *) -> *
 -- the last * is because an ADT is always a value and therefore has kind *
 -- MAYBE(pierre): how could we specify this without record syntax?
-data Frank2 a b = Frank2 (b a) deriving Show
+data Frank2 a b = Frank2 (b a) deriving (Show)
 -- examples in ghci:
--- TODO(pierre): Why does Just "HAHA" fullfill our kind * -> (* -> *) -> *?
--- Just has kind * -> *. "HAHA" has kind *. Frank will return *
--- Our type Frank a b which has kind * -> (* -> *) -> *
--- is implemented as (b a) which means that we have two values for our value
--- constructor. These values have to have kinds (* -> *) and * (where (*1 -> *2)
--- -> *3 the types of *2 and *3 must be the same!)
--- examples: Just 3
--- *Typeclasses> :t Frank {frankField = Just "HAHA"}
+-- * Typeclasses> :t Frank {frankField = Just "HAHA"}
 -- Frank {frankField = Just "HAHA"} :: Frank [Char] Maybe
--- *Typeclasses> :t Frank2 (Just "HAHA")
+-- * Typeclasses> :t Frank2 (Just "HAHA")
 -- Frank2 (Just "HAHA") :: Frank2 [Char] Maybe
 
-
--- stop here, my brain is melting.
 instance Tofu Frank where
-    tofu x = Frank x
--- TODO: continue with data Barry. NOTE: don't need to understand everything
--- here. Perhaps just skip this and check this section later..
+  tofu x = Frank x
+
+-- another example:
+data Barry t k p = Barry { yabba :: p, dabba :: t k } deriving (Show, Read)
+-- kind of barry?
+-- t takes one param to become a concrete type. t has kind * -> *
+-- k is the parameter that will make t a concrete type. Assume k is type *
+-- p is a concrete type *
+-- Barry t k p has kind --> (* -> *) -> * -> * -> *
+
+-- how to make barry be instance of Functor? (Functor has kind * -> *)
+-- --> partially apply it.
+-- instance Functor (Barry t k) where
+--     fmap f (Barry x y) = (Barry x (f y))
+-- solution:
+-- NOTE(pierre): y here is actually a concrete type that was built from t k in
+-- the type above!
+instance Functor (Barry a b) where
+    fmap f (Barry { yabba = x, dabba = y }) = Barry { yabba = (f x), dabba = y}
+-- ghci example:
+*Typeclasses> makeBarry = Barry { yabba = 1, dabba = Just 2}
+*Typeclasses> fmap (+1) makeBarry
+Barry {yabba = 2, dabba = Just 2}

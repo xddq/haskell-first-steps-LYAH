@@ -1,0 +1,12 @@
+../
+haskell-first-steps/
+| .git/
+| app/
+| dist-newstyle/
+| src/
+| .gitignore
+| CHANGELOG.md
+| README.md
+| cabal.project.local
+| haskell-first-steps.cabal
+| hie.yaml
