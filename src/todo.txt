@@ -1,2 +1,5 @@
-do haskell learning session
-clean up room
+learn haskell
+add more todos
+feed the dragon
+pet the lion
+climb mountains

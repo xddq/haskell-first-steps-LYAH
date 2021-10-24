@@ -8,7 +8,7 @@ module RecursiveDataStructures
     insertNumbersIntoTree,
     genNumbers,
     createBaseTree,
-    BinaryTree(..)
+    BinaryTree (..),
   )
 where
 
