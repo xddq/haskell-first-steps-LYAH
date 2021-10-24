@@ -17,7 +17,6 @@ import qualified System.IO as IO
 --   putStrLn "Your input in full caps: "
 --   putStr $ map Char.toUpper pipedText
 
-
 -- pipe and print only lines that are length <10
 -- 1) ghc --make filesAndStreams.hs
 -- 2) echo "hello world" | ./filesAndStreams
@@ -36,17 +35,15 @@ import qualified System.IO as IO
 --     let allLines = lines
 --     interact (\pipedText -> unlines . filter (\line -> length line < 10) $ allLines pipedText)
 
-
 -- (with solution)
 -- pipe and print only lines that are length <10, using interact.
 -- main = do
 --     putStr "All lines with <10 characters"
-    ---- interact $ unlines . filter (\line -> length line < 10) . lines
-    ---- NOTE(pierre): check pint free with filter, length again. when can we use
-    ---- point free? --> I think, if we partially apply and don't write the 'last'
-    ---- argument?
-    -- interact $ unlines . filter ((<10) . length) . lines
-
+---- interact $ unlines . filter (\line -> length line < 10) . lines
+---- NOTE(pierre): check pint free with filter, length again. when can we use
+---- point free? --> I think, if we partially apply and don't write the 'last'
+---- argument?
+-- interact $ unlines . filter ((<10) . length) . lines
 
 -- prints palindrom or no palindrom based on the check if the given line is a
 -- palindrom.
@@ -56,7 +53,6 @@ import qualified System.IO as IO
 --     putStr "Prints 'palindrom' or 'no palindrom' for given line."
 --     let isPalindrom xs = xs == reverse xs
 --     interact $ unlines . map (\line -> if isPalindrom line then "palindrom" else "no palindrom") . lines
-
 
 -- FILES.
 -- hGetContents -> gets all contents from handle (handle is a pointer to a
@@ -95,13 +91,12 @@ import qualified System.IO as IO
 --                                         putStrLn "The given file content was: "
 --                                         putStr text)
 
-
 -- writing own withFile
 withFile' path mode f = do
-    handle <- IO.openFile path mode
-    result <- f handle
-    IO.hClose handle
-    return result
+  handle <- IO.openFile path mode
+  result <- f handle
+  IO.hClose handle
+  return result
 
 -- FILE operations are similar to 'normal' io operations. e.g. getChar, putStr,
 -- putStrLn, etc..
@@ -127,8 +122,8 @@ withFile' path mode f = do
 --     putStrLn "going to read in ./testfile and write the uppercased text to ./testwritefile using writeFile which does overwrite an existing file."
 --     writeFile "./testwritefile" $ map Char.toUpper text
 main = do
-    text <- readFile "./testfile"
-    putStrLn "going to read in ./testfile and write the uppercased text to ./testwritefile using appendFile which does append content to the existing file."
-    appendFile "./testwritefile" $ map Char.toUpper text
+  text <- readFile "./testfile"
+  putStrLn "going to read in ./testfile and write the uppercased text to ./testwritefile using appendFile which does append content to the existing file."
+  appendFile "./testwritefile" $ map Char.toUpper text
 
 -- TODO(pierre): continue at todo.txt

@@ -1,0 +1,2 @@
+do haskell learning session
+clean up room
