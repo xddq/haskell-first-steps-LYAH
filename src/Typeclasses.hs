@@ -295,17 +295,23 @@ data Frank a b = Frank {frankField :: b a} deriving (Show)
 -- the last * is because an ADT is always a value and therefore has kind *
 -- MAYBE(pierre): how could we specify this without record syntax?
 data Frank2 a b = Frank2 (b a) deriving (Show)
+
 -- examples in ghci:
+
 -- * Typeclasses> :t Frank {frankField = Just "HAHA"}
+
 -- Frank {frankField = Just "HAHA"} :: Frank [Char] Maybe
+
 -- * Typeclasses> :t Frank2 (Just "HAHA")
+
 -- Frank2 (Just "HAHA") :: Frank2 [Char] Maybe
 
 instance Tofu Frank where
   tofu x = Frank x
 
 -- another example:
-data Barry t k p = Barry { yabba :: p, dabba :: t k } deriving (Show, Read)
+data Barry t k p = Barry {yabba :: p, dabba :: t k} deriving (Show, Read)
+
 -- kind of barry?
 -- t takes one param to become a concrete type. t has kind * -> *
 -- k is the parameter that will make t a concrete type. Assume k is type *
@@ -320,8 +326,12 @@ data Barry t k p = Barry { yabba :: p, dabba :: t k } deriving (Show, Read)
 -- NOTE(pierre): y here is actually a concrete type that was built from t k in
 -- the type above!
 instance Functor (Barry a b) where
-    fmap f (Barry { yabba = x, dabba = y }) = Barry { yabba = (f x), dabba = y}
+  fmap f (Barry {yabba = x, dabba = y}) = Barry {yabba = (f x), dabba = y}
+
 -- ghci example:
-*Typeclasses> makeBarry = Barry { yabba = 1, dabba = Just 2}
-*Typeclasses> fmap (+1) makeBarry
-Barry {yabba = 2, dabba = Just 2}
+
+-- * Typeclasses> makeBarry = Barry { yabba = 1, dabba = Just 2}
+
+-- * Typeclasses> fmap (+1) makeBarry
+
+-- Barry {yabba = 2, dabba = Just 2}

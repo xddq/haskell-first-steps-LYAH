@@ -29,6 +29,7 @@ main = do
 
 -- helper function that deletes todos by overwriting current file with filtered
 -- todos.
+deleteTodo :: String -> String -> IO ()
 deleteTodo filePath todo = do
   todos <- IO.readFile filePath
   -- let newTodos = filter (\line -> line /= todo) $ lines todos
@@ -51,6 +52,7 @@ removeElemAtPos pos xs = leftSide ++ rightSide
 
 -- helper function to read in a given file, number the lines and print them to
 -- stdout.
+viewTodos :: String -> IO ()
 viewTodos filePath = do
   putStrLn "Welcome! Here are your current todos: "
   todos <- IO.readFile filePath
@@ -61,3 +63,52 @@ numberText =
   unlines
     . zipWith (\number line -> show number ++ " - " ++ line) [1 ..]
     . lines
+
+-- CONTINUE AT randomness.hs
+
+-- solution:
+-- NOTE: dispatch function looks interesting. Just action is also good to catch
+-- case when not found.
+-- import System.Environment
+-- import System.Directory
+-- import System.IO
+-- import Data.List
+--
+-- dispatch :: [(String, [String] -> IO ())]
+-- dispatch =  [ ("add", add)
+--             , ("view", view)
+--             , ("remove", remove)
+--             ]
+--
+-- main = do
+--     (command:args) <- getArgs
+--     let (Just action) = lookup command dispatch
+--     action args
+--
+-- add :: [String] -> IO ()
+-- add [fileName, todoItem] = appendFile fileName (todoItem ++ "\n")
+--
+-- view :: [String] -> IO ()
+-- view [fileName] = do
+--     contents <- readFile fileName
+--     let todoTasks = lines contents
+--         numberedTasks = zipWith (\n line -> show n ++ " - " ++ line) [0..] todoTasks
+--     putStr $ unlines numberedTasks
+--
+-- remove :: [String] -> IO ()
+-- remove [fileName, numberString] = do
+--     handle <- openFile fileName ReadMode
+--     (tempName, tempHandle) <- openTempFile "." "temp"
+--     contents <- hGetContents handle
+--     let number = read numberString
+--         todoTasks = lines contents
+--         newTodoItems = delete (todoTasks !! number) todoTasks
+--     hPutStr tempHandle $ unlines newTodoItems
+--     hClose handle
+--     hClose tempHandle
+--     removeFile fileName
+--     renameFile tempName fileName
+--
+--
+--
+-- CONTINUE AT randomness.hs
