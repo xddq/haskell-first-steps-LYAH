@@ -22,7 +22,7 @@ maintainer:         git@pierrefhapp.dev
 extra-source-files: CHANGELOG.md
 
 library
-    exposed-modules:  FirstSteps CodeBaseLibrary Geometry.Cube Geometry.Cuboid RecursiveDataStructures Typeclasses
+    exposed-modules:  FirstSteps CodeBaseLibrary Geometry.Cube Geometry.Cuboid RecursiveDataStructures Typeclasses Bytestrings
 
     -- Modules included in this library but not exported.
     -- other-modules:

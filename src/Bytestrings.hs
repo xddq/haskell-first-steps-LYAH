@@ -17,6 +17,8 @@
 
 -- import qualified Data.Bytestring as ByteString
 -- import qualified Data.Bytestring.Lazy as LazyByteString
+module Bytestrings (testPack) where
+
 import qualified Data.ByteString.Lazy as ByteString
 
 -- NOTE: how can I add bytestring package?

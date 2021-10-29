@@ -2,6 +2,8 @@
 module Main where
 
 -- imports modules which are stored in /src/*
+
+import qualified Bytestrings as ByteString
 import qualified FirstSteps (add, evens, fac, testPrint)
 import qualified Geometry.Cuboid as Cuboid
 import qualified Prelude
@@ -25,3 +27,5 @@ main = do
   Prelude.putStrLn "calculating area and volume of cuboid with values: 3 4 5"
   Prelude.putStrLn ("volume: " Prelude.++ Prelude.show (Cuboid.volume 3 4 5))
   Prelude.putStrLn ("area: " Prelude.++ Prelude.show (Cuboid.area 3 4 5))
+  ByteString.testPack
+  Prelude.return ()
