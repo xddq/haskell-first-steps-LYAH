@@ -19,7 +19,8 @@
 -- import qualified Data.Bytestring.Lazy as LazyByteString
 module Bytestrings (testPack) where
 
-import qualified Data.ByteString.Lazy as ByteString
+import qualified Data.ByteString as BS
+import qualified Data.ByteString.Lazy as LazyBS
 
 -- NOTE: how can I add bytestring package?
 -- - added it in my .cabal file
@@ -27,4 +28,22 @@ import qualified Data.ByteString.Lazy as ByteString
 
 -- pack :: [Word8] -> ByteString --> takes list of values within rrange 0-255
 -- and returns a bytestring. (e.g. takes lazy and returns less lazy)
-testPack = ByteString.pack [99, 97, 110]
+testPack = BS.pack [99, 97, 110]
+
+-- NOTE: can use bytestrings whenever we need more performance.
+-- Can just use bytestring instead of default system io.
+-- example "
+-- import System.Environment
+-- import qualified Data.ByteString.Lazy as B
+--
+-- main = do
+--     (fileName1:fileName2:_) <- getArgs
+--     copyFile fileName1 fileName2
+--
+-- copyFile :: FilePath -> FilePath -> IO ()
+-- copyFile source dest = do
+--     contents <- B.readFile source
+--     B.writeFile dest contents
+--     "
+--
+--     CONTINUE Exceptions.hs
