@@ -59,12 +59,18 @@ handler e
   --     to open the file.
   -- SOLUTION: there are all errors defiend here: https://downloads.haskell.org/~ghc/6.10.1/docs/html/libraries/base/System-IO-Error.html#3
   -- note this is ghc 6.10 version stuff..
-  | SysIOErr.isDoesNotExistError e = putStrLn "File does not exist!"
+  -- can use ioeGetFileName to get the filename based on an IO error, when we
+  -- have one -> Maybe :]
+  | SysIOErr.isDoesNotExistError e =
+    case SysIOErr.ioeGetFileName e of
+      Just path -> putStrLn $ "There is no file for given path: " ++ path
+      Nothing -> putStrLn "File does not exist! No path was given inside the error.."
   | SysIOErr.isFullError e = freeSomeSpace
   | SysIOErr.isIllegalOperation e = notifyCops
   | otherwise = ioError e
 
 freeSomeSpace = putStrLn "free some space!"
+
 notifyCops = putStrLn "illegal action.. calling the cops!"
 
 -- some predicates for io error types:
@@ -77,3 +83,12 @@ notifyCops = putStrLn "illegal action.. calling the cops!"
 -- isPermissionError
 -- isUserError
 
+-- we can of catch multiple exceptions with different handlers.
+-- e.g.
+-- main = do toTry `catch` handler1
+-- thenTryThis `catch` handler2
+-- launchRockets
+--
+-- for pure code mostly use either or maybe. And for io code can also use either
+-- type with right(correct stuff) left(error stuff)
+-- CONTINUE: functionalProblemSolving.hs
