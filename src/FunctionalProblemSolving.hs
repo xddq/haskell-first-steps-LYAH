@@ -10,33 +10,49 @@ import Data.Maybe
 
 testArray = "10 4 2 * -"
 
---
-calcRPN :: (Num a) => String -> a
+calcRPN :: String -> IO String
 calcRPN input = do
-  let numbers = filter representsNumber $ words input
-  let operators = filter representsOperator $ words input
-  let order = map representsNumber $ words input
-  3
+  putStrLn "hello"
+  return "hello"
 
-data Action = PushStack | PopStack deriving (Show, Eq)
+main = do
+  putStrLn "Enter your expression in RPN (reverse polish notation)."
+  putStrLn "Example: 10 4 3 + 2 * - "
+  input <- getLine
+  putStrLn $ "input was: " ++ input
+  let result = show $ calc input EmptyStack
+  putStrLn $ "result is: " ++ result
 
-makeStack :: a -> Stack a
-makeStack input = input :-: EmptyStack
+-- MAYBE(pierre): why cant I use this with interact?
+-- putStrLn "Enter your expression in RPN (reverse polish notation)."
+-- putStr "Example: 10 4 3 + 2 * - "
+-- interact (\input -> show input)
 
-calc :: (Num a, Read a, Fractional a) => String -> Stack a -> a
+-- calculates RPN recursively
+calc :: (Num a, Read a, Show a, Fractional a) => String -> Stack a -> a
 calc [] stack = result
   where
     (result, restStack) = stackPop stack
 calc input stack = do
-  let nextValue = head $ words input
+  let values = words input
+  let nextValue = head values
+  let nextInput = unwords $ drop 1 values
   if representsNumber nextValue
-    then calc (drop 1 input) (stackPush stack $ read nextValue)
-    else case returnOperator input of
+    then calc nextInput (stackPush stack $ read nextValue)
+    else case returnOperator nextValue of
       Just operator -> do
-        let (firstVal, restStack) = stackPop stack
-        let (secondVal, restStack') = stackPop restStack
-        calc (drop 1 input) (stackPush restStack' (operator firstVal secondVal))
+        let (firstVal, secondVal, restStack) = popTwoValues stack
+        calc nextInput (stackPush restStack (operator firstVal secondVal))
       Nothing -> undefined
+
+representsNumber :: String -> Bool
+representsNumber = all ((== True) . Char.isNumber)
+
+popTwoValues :: Stack a -> (a, a, Stack a)
+popTwoValues stack = (firstValue, secondValue, restStack')
+  where
+    (firstValue, restStack) = stackPop stack
+    (secondValue, restStack') = stackPop restStack
 
 returnOperator :: (Num a, Fractional a) => String -> Maybe (a -> a -> a)
 returnOperator input
@@ -46,74 +62,18 @@ returnOperator input
   | input == "/" = Just (/)
   | otherwise = Nothing
 
--- case representsNumber nextValue of
---   True -> calc (tail input) (stackPush stack nextValue)
---   False -> undefined
-
 infixr 5 :-:
 
 data Stack a = EmptyStack | a :-: (Stack a) deriving (Show, Eq, Read, Ord)
 
-testStack = stackPush (stackPush (makeStack 10) 2) 3
-
-infixr 5 :.:
-
-data List a = Empty | a :.: (List a) deriving (Show, Eq, Read, Ord)
-
-testList = 2 :.: 3 :.: 4 :.: Empty
+makeStack :: a -> Stack a
+makeStack input = input :-: EmptyStack
 
 stackPush :: Stack a -> a -> Stack a
 stackPush xs input = input :-: xs
 
+testStack = stackPush (stackPush (makeStack 10) 2) 3
+
 stackPop :: Stack a -> (a, Stack a)
 stackPop EmptyStack = undefined
 stackPop (x :-: xs) = (x, xs)
-
--- class Stackable a where
---     pop :: [a] -> a
---     push :: [a] -> a -> [a]
--- instance Stackable Stack a where
---     push xs input = input:xs
---     pop (x:xs) = x
-
--- calc :: (Num a) => String -> [a] -> a
--- -- NOTE(pierre): head is unsafe, how else to solve it?
--- calc [] stack = head stack
--- calc input stack = do
---     let firstValue = head $ words input
---     case representsNumber of input
---         True -> calc (tail input) (stack:
-
--- calc (acc, numbers, operators, actions)
--- if order = PushStack then
-
--- MAYBE(pierre): where are functions for safeTail, safeHead etc..?
-safeTail :: [a] -> [a]
-safeTail [] = []
-safeTail (x : xs) = xs
-
-returnNumber :: (Num a, Read a) => String -> Maybe a
-returnNumber input = if representsNumber input then Just $ read input else Nothing
-
-representsNumber :: String -> Bool
-representsNumber = all ((== True) . Char.isNumber)
-
-data MyOperator = Addition | Multiplication | Division deriving (Show, Eq)
-
-representsOperator :: String -> Bool
-representsOperator input =
-  let supportedOperators = words "+ - / *"
-   in if (==) 1 $ length input then elem input supportedOperators else False
-
--- returnOperator :: String -> Maybe MyOperator
--- returnOperator input
---   | input == "+" = Just Addition
---   | input == "*" = Just Multiplication
---   | input == "/" = Just Division
---   | otherwise = Nothing
-
--- helperRPN :: (Num a, Num b, Fractional b) => String -> String -> Either a b
--- helperRPN input stack = do
---     case representsNumber input of
---         Just number -> number
---         Nothing -> -1
