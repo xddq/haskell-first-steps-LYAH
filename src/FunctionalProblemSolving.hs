@@ -5,8 +5,11 @@
 -- result back on the stack. when we are on the end we pop the stack.
 -- e.g.
 -- RPN 10 4 3 + 2 * - --> 3+4=7;2*7=14;14-10=4; 4
+
+import Data.Char
 import qualified Data.Char as Char
 import Data.Maybe
+import Control.Monad
 
 testArray = "10 4 2 * -"
 
@@ -15,7 +18,7 @@ calcRPN input = do
   putStrLn "hello"
   return "hello"
 
-main = do
+main = forever $ do
   putStrLn "Enter your expression in RPN (reverse polish notation)."
   putStrLn "Example: 10 4 3 + 2 * - "
   input <- getLine
@@ -23,10 +26,10 @@ main = do
   let result = show $ calc input EmptyStack
   putStrLn $ "result is: " ++ result
 
--- MAYBE(pierre): why cant I use this with interact?
+-- TODO: why does this not work the same as above?
 -- putStrLn "Enter your expression in RPN (reverse polish notation)."
 -- putStr "Example: 10 4 3 + 2 * - "
--- interact (\input -> show input)
+-- interact (\input -> show $ calc input EmptyStack)
 
 -- calculates RPN recursively
 calc :: (Num a, Read a, Show a, Fractional a) => String -> Stack a -> a
