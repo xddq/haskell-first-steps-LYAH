@@ -6,6 +6,7 @@
 -- e.g.
 -- RPN 10 4 3 + 2 * - --> 3+4=7;2*7=14;14-10=4; 4
 import qualified Data.Char as Char
+import Data.Maybe
 
 testArray = "10 4 2 * -"
 
@@ -19,36 +20,54 @@ calcRPN input = do
 
 data Action = PushStack | PopStack deriving (Show, Eq)
 
--- basic minimal operation. if number -> put on stack, else pop from stack.
--- use tuple to return result and resulting list.
--- calc :: (Num a) => ([a], [MyOperator], [Action]) -> ([a], [MyOperator], [Action])
--- calc (xs, _, []) = (xs, _, [])
--- calc (numbers, operators, actions) = do
---     if head actions == PushStack then calc (xs
-
 makeStack :: a -> Stack a
 makeStack input = input :-: EmptyStack
 
-calc :: [a] -> Stack a -> a
+calc :: (Num a, Read a, Fractional a) => String -> Stack a -> a
 calc [] stack = result
-    where (result, restStack) = stackPop stack
-    -- TODO(pierre): continue here!
+  where
+    (result, restStack) = stackPop stack
+calc input stack = do
+  let nextValue = head $ words input
+  if representsNumber nextValue
+    then calc (drop 1 input) (stackPush stack $ read nextValue)
+    else case returnOperator input of
+      Just operator -> do
+        let (firstVal, restStack) = stackPop stack
+        let (secondVal, restStack') = stackPop restStack
+        calc (drop 1 input) (stackPush restStack' (operator firstVal secondVal))
+      Nothing -> undefined
+
+returnOperator :: (Num a, Fractional a) => String -> Maybe (a -> a -> a)
+returnOperator input
+  | input == "+" = Just (+)
+  | input == "-" = Just (-)
+  | input == "*" = Just (*)
+  | input == "/" = Just (/)
+  | otherwise = Nothing
+
+-- case representsNumber nextValue of
+--   True -> calc (tail input) (stackPush stack nextValue)
+--   False -> undefined
 
 infixr 5 :-:
+
 data Stack a = EmptyStack | a :-: (Stack a) deriving (Show, Eq, Read, Ord)
-testStack = 2 :-: 3 :-: EmptyStack
+
+testStack = stackPush (stackPush (makeStack 10) 2) 3
 
 infixr 5 :.:
+
 data List a = Empty | a :.: (List a) deriving (Show, Eq, Read, Ord)
+
 testList = 2 :.: 3 :.: 4 :.: Empty
 
-
 stackPush :: Stack a -> a -> Stack a
-stackPush xs input = input:-:xs
+stackPush xs input = input :-: xs
 
-stackPop :: Stack a -> (a,Stack a)
+stackPop :: Stack a -> (a, Stack a)
 stackPop EmptyStack = undefined
-stackPop (x:-:xs) = (x, xs)
+stackPop (x :-: xs) = (x, xs)
 
 -- class Stackable a where
 --     pop :: [a] -> a
@@ -86,12 +105,12 @@ representsOperator input =
   let supportedOperators = words "+ - / *"
    in if (==) 1 $ length input then elem input supportedOperators else False
 
-returnOperator :: String -> Maybe MyOperator
-returnOperator input
-  | input == "+" = Just Addition
-  | input == "*" = Just Multiplication
-  | input == "/" = Just Division
-  | otherwise = Nothing
+-- returnOperator :: String -> Maybe MyOperator
+-- returnOperator input
+--   | input == "+" = Just Addition
+--   | input == "*" = Just Multiplication
+--   | input == "/" = Just Division
+--   | otherwise = Nothing
 
 -- helperRPN :: (Num a, Num b, Fractional b) => String -> String -> Either a b
 -- helperRPN input stack = do
