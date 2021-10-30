@@ -1,30 +1,31 @@
 -- src: http://learnyouahaskell.com/functionally-solving-problems
--- problem: RPN (reverse polish notation) --> calculating by putting onto stack
--- until we find an operator and then apply that operator to the (depending on
--- arity, mostly 2 I guess?) two values which are on the stack and we put the
--- result back on the stack. when we are on the end we pop the stack.
--- e.g.
--- RPN 10 4 3 + 2 * - --> 3+4=7;2*7=14;14-10=4; 4
 
+import Control.Monad
 import Data.Char
 import qualified Data.Char as Char
 import Data.Maybe
-import Control.Monad
 
 testArray = "10 4 2 * -"
+
+-- RPN - REVERSE POLISH NOTATION
+-- calculating by putting onto stack until we find an operator and then apply
+-- that operator to the (depending on arity, mostly 2 I guess?) two values which
+-- are on the stack and we put the result back on the stack. when we are on the
+-- end we pop the stack. e.g.
+-- RPN 10 4 3 + 2 * - --> 3+4=7;2*7=14;14-10=4; 4
 
 calcRPN :: String -> IO String
 calcRPN input = do
   putStrLn "hello"
   return "hello"
 
-main = forever $ do
-  putStrLn "Enter your expression in RPN (reverse polish notation)."
-  putStrLn "Example: 10 4 3 + 2 * - "
-  input <- getLine
-  putStrLn $ "input was: " ++ input
-  let result = show $ calc input EmptyStack
-  putStrLn $ "result is: " ++ result
+-- main = forever $ do
+--   putStrLn "Enter your expression in RPN (reverse polish notation)."
+--   putStrLn "Example: 10 4 3 + 2 * - "
+--   input <- getLine
+--   putStrLn $ "input was: " ++ input
+--   let result = show $ calc input EmptyStack
+--   putStrLn $ "result is: " ++ result
 
 -- TODO: why does this not work the same as above?
 -- putStrLn "Enter your expression in RPN (reverse polish notation)."
@@ -80,3 +81,35 @@ testStack = stackPush (stackPush (makeStack 10) 2) 3
 stackPop :: Stack a -> (a, Stack a)
 stackPop EmptyStack = undefined
 stackPop (x :-: xs) = (x, xs)
+
+-- SOLUTION to RPN:
+-- call operation on first two values in list --> using list as our stack first
+-- entry is the top of stack.
+-- when we have a number we just prepend it to list --> add it to stack
+-- NOTE: not failsafe yet. will be adapted once we get to know monads.
+solveRPN :: (Read a, Num a) => String -> a
+-- solveRPN expression = head (foldl foldingFunction [] (words expression))
+solveRPN = head . foldl foldingFunction [] . words
+  where
+    foldingFunction (x : y : ys) "*" = (x * y) : ys
+    foldingFunction (x : y : ys) "+" = (x + y) : ys
+    foldingFunction (x : y : ys) "-" = (y - x) : ys
+    -- expect it to be multiple numbers represented as string if it is not one
+    -- of our symbols [*,+,-,..]
+    foldingFunction xs numberString = read numberString : xs
+
+
+-- HEATHROW TO LONDOWN
+-- shortest path from a to b.
+-- we only have to roads and for each intersection we have one crossroad.
+-- check the picture to understand:
+-- http://learnyouahaskell.com/functionally-solving-problems
+type Road a b = Either a b
+data Edge a b c = Edge String String Int deriving (Show, Read, Eq)
+data RoadA Int = RoadA Int
+data RoadB Int = RoadB Int
+
+data Edge a b c = Edge String String Int
+
+createEdges :: (String,String) -> Int -> Int -> Int -> [Edge]
+createEdges (startA, startB) costAtoA costAtoB costBtoB = do
