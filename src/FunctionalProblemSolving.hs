@@ -98,18 +98,26 @@ solveRPN = head . foldl foldingFunction [] . words
     -- of our symbols [*,+,-,..]
     foldingFunction xs numberString = read numberString : xs
 
-
--- HEATHROW TO LONDOWN
+-- HEATHROW TO LONDON
 -- shortest path from a to b.
 -- we only have to roads and for each intersection we have one crossroad.
 -- check the picture to understand:
 -- http://learnyouahaskell.com/functionally-solving-problems
 type Road a b = Either a b
+
 data Edge a b c = Edge String String Int deriving (Show, Read, Eq)
-data RoadA Int = RoadA Int
-data RoadB Int = RoadB Int
 
-data Edge a b c = Edge String String Int
+data RoadA a = RoadA Int
 
-createEdges :: (String,String) -> Int -> Int -> Int -> [Edge]
-createEdges (startA, startB) costAtoA costAtoB costBtoB = do
+data RoadB a = RoadB Int
+
+-- createEdges :: (String, String) -> Int -> Int -> Int -> [Edge]
+-- createEdges (startA, startB) costAtoA costAtoB costBtoB = do
+--
+--
+-- MAYBE(pierre): do HEATHROW TO LONDON
+-- NOTE(pierre): Skipped the second exercise. Rather focus on getting the next
+-- chapter (functors, applicative functors, monoids, etc.. and later return to
+-- the exercise. It is just about the problem, not really about haskell specific
+-- stuff.
+-- CONTINUE AT: FunctorsApplicativeFunctorsMonoids.hs
