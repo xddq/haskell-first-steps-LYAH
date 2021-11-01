@@ -132,7 +132,7 @@ testApplicativeFunctor = do
 -- <*> --> takes a functor with a function and a functor with values and returns
 -- a functor with the function applied over the functors values.
 
--- applicative for Maybe
+-- applicative Functor for Maybe
 -- instance Main.Applicative Maybe where
 --   pure = Just
 --   Nothing <*> _ = Nothing
@@ -140,11 +140,14 @@ testApplicativeFunctor = do
 
 -- ghci
 -- :l FunctorsApplicativeFunctorsMonoids.hs
-test1 =  pure (+3) <*> Just 4
+test1 = pure (+ 3) <*> Just 4
+
 -- Just 7
-test2 = pure (*2) <*> Nothing
+test2 = pure (* 2) <*> Nothing
+
 -- Nothing
 test3 = pure (+) <*> Just 3 <*> Just 5
+
 -- Just 8
 
 -- Main.pure f <*> x == fmap f x --> Control.Applicative exports a function that
@@ -152,25 +155,27 @@ test3 = pure (+) <*> Just 3 <*> Just 5
 -- f <$> x = fmap f x NOTE(pierre): f is a function and not a functor here :] X
 -- is the applicative functor.
 test4 = (+) <$> Just 3 <*> Just 5
--- Just 8
 
+-- Just 8
 
 -- how [] is an applicative functor:
 -- instance Applicative [] where
 --     pure x = [x]
 --     fs <*> xs = [f x | f <- fs, x <- xs]
 -- examples:
-test5 = [(subtract 1),(*2),(+50)] <*> [1,2,3]
+test5 = [(subtract 1), (* 2), (+ 50)] <*> [1, 2, 3]
+
 -- [0,1,2,2,4,6,51,52,53]
-test6 = [(subtract),(*),(+)] <*> [1,2,3] <*> [4,5,6]
+test6 = [(subtract), (*), (+)] <*> [1, 2, 3] <*> [4, 5, 6]
 
 -- all possible products of [2,5,10] and [8,10,11]
-test7 = [ x * y | x <- [2,5,6], y <- [8,10,11] ]
--- using <*>
-test8 = (*) <$> [2,5,6] <*> [8,10,11]
--- products value > 50:
-test9 = filter (>50) $ (*) <$> [2,5,6] <*> [8,10,11]
+test7 = [x * y | x <- [2, 5, 6], y <- [8, 10, 11]]
 
+-- using <*>
+test8 = (*) <$> [2, 5, 6] <*> [8, 10, 11]
+
+-- products value > 50:
+test9 = filter (> 50) $ (*) <$> [2, 5, 6] <*> [8, 10, 11]
 
 -- how IO is an applicative functor:
 -- instance Applicative IO where
@@ -182,23 +187,23 @@ test9 = filter (>50) $ (*) <$> [2,5,6] <*> [8,10,11]
 -- examples:
 test10 :: IO String
 test10 = do
-    a <- getLine
-    b <- getLine
-    return $ a ++ b
+  a <- getLine
+  b <- getLine
+  return $ a ++ b
 
 test11 :: IO String
 -- TODO(pierre): why did this not work?
 -- test11 = return $ (++) <$> getLine <*> getLine
 test11 = (++) <$> getLine <*> getLine
+
 -- NOTE: if we are binding some IO action to names and then calling functions on
 -- these names, rather use applicative functor syntax <$> and <*>
 test12 = do
-    a <- (++) <$> getLine <*> getLine
-    -- first <- getLine
-    -- second <- getLine
-    -- let concat = first ++ second
-    putStrLn $ "You typed in the lines: " ++ a
-
+  a <- (++) <$> getLine <*> getLine
+  -- first <- getLine
+  -- second <- getLine
+  -- let concat = first ++ second
+  putStrLn $ "You typed in the lines: " ++ a
 
 -- how ((->) r) FUNCTIONS are an applicative functor.
 -- NOTE(pierre): I still do not understand this ((->) r) thingy. I think it
@@ -211,15 +216,18 @@ test12 = do
 --     pure x = (\_ -> x)
 --     f <*> g = \x -> f x (g x)
 -- examples:
-test13 = (+) <$> (+2) <*> (*2) $ 100
+test13 = (+) <$> (+ 2) <*> (* 2) $ 100
+
 -- results in ((100 + 2) + (100 * 2))
 -- these are the equal.
-test14a x = (+2) <$> (*3) $ x
-test14b x = (2 + (3* x))
--- these are equal.
-test15a x = (\x y z -> [x,y,z]) <$> (+3) <*> (*2) <*> (/2) $ x
-test15b x = (\x y z -> [x, y, z]) (x+3) (x*2) (x/2)
+test14a x = (+ 2) <$> (* 3) $ x
 
+test14b x = 2 + (3 * x)
+
+-- these are equal.
+test15a x = (\x y z -> [x, y, z]) <$> (+ 3) <*> (* 2) <*> (/ 2) $ x
+
+test15b x = (\x y z -> [x, y, z]) (x + 3) (x * 2) (x / 2)
 
 -- how ZipList is an applicative functor.
 -- instance Applicative ZipList where
@@ -232,24 +240,72 @@ test15b x = (\x y z -> [x, y, z]) (x+3) (x*2) (x/2)
 -- --> ZipList was born!
 -- NOTE: resulting list will be of length of the shorter of both given lists(
 -- same as normal zipWith function)
-test16a = ZipList [(+1),(*2)] <*> ZipList [1,2]
-test16b = ZipList [2,4]
+test16a = ZipList [(+ 1), (* 2)] <*> ZipList [1, 2]
+
+test16b = ZipList [2, 4]
+
 -- haskell way to generate a minimal context for the <*> function to yield the
 -- correct result. Just generate a lazy infinite list of that value :D
 -- making tuples is also a function
 test17a = (,,)
+
 -- "The (,,) function is the same as \x y z -> (x,y,z).
 -- Also, the (,) function is the same as \x y -> (x,y)."
 testTest17a = test17a 2 4 10
-test18 = getZipList $ (,,) <$> ZipList "hello" <*> ZipList "zip" <*> ZipList "world"
 
+test18 = getZipList $ (,,) <$> ZipList "hello" <*> ZipList "zip" <*> ZipList "world"
 
 -- liftA2
 -- :t liftA2
+-- --> shortcut for writing f <$> a <*> b
 -- liftA2 :: (Applicative f) => (a -> b -> c) -> f a -> f b -> f c
 -- definition
 liftA2' :: (Applicative f) => (a -> b -> c) -> f a -> f b -> f c
 liftA2' f a b = f <$> a <*> b
+
 -- --> takes a function, applies it to both values of the applicative
 -- functors/boxes/contexts and returns a boxed value
--- TODO(pierre): continue here.
+test19 = getZipList $ liftA2 (,) (ZipList "hello") (ZipList "zip")
+
+-- we can box boxed values (have applicative functor that has an applicative
+-- functor inside his value). [] is a box and Just is a box.
+test20 = fmap (\x -> [x]) (Just 4)
+
+-- these are equal
+test21 = (:) <$> (Just 3) <*> (Just [4])
+
+test22 = liftA2 (:) (Just 3) (Just [4])
+
+-- takes list of applicatives and returns an applicative with a list as its
+-- result values.
+sequenceA' :: Applicative f => [f a] -> f [a]
+sequenceA' = foldl (\acc x -> liftA2 (:) x acc) (pure [])
+
+sequenceA'' :: Applicative f => [f a] -> f [a]
+sequenceA'' = foldr (\x acc -> liftA2 (:) x acc) (pure [])
+
+-- solution: either recursion or fold.
+sequenceAq :: (Applicative f) => [f a] -> f [a]
+sequenceAq [] = pure []
+sequenceAq (x : xs) = (:) <$> x <*> sequenceAq xs
+
+-- NOTE: since liftA2 (:) takes two arguments we can drop the \x and acc :]
+sequenceA''' :: Applicative f => [f a] -> f [a]
+sequenceA''' = foldr (liftA2 (:)) (pure [])
+
+test23 = sequenceA''' [Just 1, Just 2, Just 3]
+
+-- since here the function is the applicative functor we get a result (\x ->
+-- [x+3,x*2,x+1]) therefore we have to pass another value to this :]
+test24 = sequenceA''' [(+ 3), (* 2), (+ 1)] 5
+
+test25 = sequenceA''' [[1, 2, 3], [4, 5, 6]]
+
+test26 = getZipList $ sequenceA''' [ZipList [1, 2, 3], ZipList [4, 5, 6]]
+
+-- TODO(pierre): why is the result the empty list?
+test27 = sequenceA''' [[1, 2, 3], [4, 5, 6], [3, 4, 4], []]
+
+-- somehow applying sequenceA'/''/''' has semantic of "if any is false, display
+-- false" --> if all correct, then display results.
+-- TODO: continue here.
