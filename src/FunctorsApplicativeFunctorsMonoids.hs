@@ -308,4 +308,29 @@ test27 = sequenceA''' [[1, 2, 3], [4, 5, 6], [3, 4, 4], []]
 
 -- somehow applying sequenceA'/''/''' has semantic of "if any is false, display
 -- false" --> if all correct, then display results.
--- TODO: continue here.
+-- --> sequenceA is similar to map when we are mapping over an array of functions.
+test28a = map (\f -> f 7) [(+1),(*2),(+20)]
+-- will apply (:) to each function (+1), (*2), (+20) resulting in a list of
+-- functions that take one i
+test28b = sequenceA''' [(+1),(*2),(+20)]
+
+
+-- sequenceA''' :: Applicative f => [f a] -> f [a]
+-- sequenceA''' = foldr (liftA2 (:)) (pure [])
+-- same as
+sequenceA'''' applicativeFunctorsList = foldr (liftA2 (:)) (pure []) applicativeFunctorsList
+
+-- input [f 1,f 2,f 3] will yield
+-- 3:[]; 2:[3]; 1:[2,3] --> f [1,2,3]
+-- same as
+sequenceA''''' applicativeFunctorsList = foldr (\x acc -> liftA2 (:) x acc) (pure []) applicativeFunctorsList
+
+-- with input [f +1, f *2, f +20]
+-- applicative functor here is function. with example [(+1), (*2), (+20)]
+-- (+20):[]; (*2):[(+20)]; (+1):[(*2),(+20)] --> f [(+1),(*2),(+20)]
+-- --> ([(+1),(*2),(+20))
+-- TODO(pierre): Ask in matrix,slack or reddit for the solution/explanation to
+-- this result.
+
+test29 = sequenceA''' [[1,2,3],[4,5,6]]
+-- TODO:continue here.
