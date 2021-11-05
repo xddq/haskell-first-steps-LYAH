@@ -1,6 +1,7 @@
 -- src: http://learnyouahaskell.com/functors-applicative-functors-and-monoids
 -- MONOIDS
 import qualified Data.Foldable as F
+import Data.Monoid
 
 -- stuff usually gets thrown into behaviour categories in haskell. e.g. into Functor,
 -- Applicative, Eq, Ord, etd..
@@ -128,8 +129,11 @@ instance (Monoid' a) => Monoid' (Maybe a) where
   (Just x) `mappend'` (Just y) = Just (x `mappend'` y)
   Nothing `mappend'` m = m
   m `mappend'` Nothing = m
+
 test17 = Nothing `mappend'` Just "hello"
+
 test18 = Just "hello" `mappend'` Just " world"
+
 -- --> Comes in handy when we are using monoids for computations that may have
 -- failed. We can just operate over them and dont have to check if they have
 -- failed or not.
@@ -138,20 +142,24 @@ test18 = Just "hello" `mappend'` Just " world"
 -- 2) if we don't expect the parameter to be an instance of Monoid itself.
 -- --> just use the first value if it  is Just x, else use the second.
 -- NOTE: normally available from Data.Monoid.
-newtype First' a = First' { getFirst' :: Maybe a }
-    deriving (Eq, Ord, Read, Show)
+newtype First' a = First' {getFirst' :: Maybe a}
+  deriving (Eq, Ord, Read, Show)
+
 -- instance Monoid' (First' a) where ---wrong. Forgot to wrap in First'.
 --     mempty' = Nothing
 --     (Just x) `mappend'` (Just y) = Just x
 --     Nothing `mappend'` x = x
 --     x `mappend'` Nothing = x
 instance Monoid' (First' a) where
-    mempty' = First' Nothing
-    First' (Just x) `mappend'` _ = First' (Just x)
-    -- x here basicly stands for Just x
-    First' Nothing `mappend'` x = x
+  mempty' = First' Nothing
+  First' (Just x) `mappend'` _ = First' (Just x)
+  -- x here basicly stands for Just x
+  First' Nothing `mappend'` x = x
+
 test19 = getFirst' $ First' (Just 'a') `mappend'` First' (Just 'b')
+
 test20 = getFirst' $ First' Nothing `mappend'` First' (Just 'b')
+
 -- The First' Monoid is useful when we have a bunch of maybes and want to find
 -- out if there is a value that is a Just.
 test21 = getFirst' $ mconcat' [First' Nothing, First' Nothing, First' (Just 3), First' (Just 4)]
@@ -161,7 +169,6 @@ test21 = getFirst' $ mconcat' [First' Nothing, First' Nothing, First' (Just 3), 
 -- Skipping because it is basicly the same as First' a, but `mappend'` picks the
 -- second First'.
 -- NOTE: available from Data.Monoid.
-
 
 -- using Monoids to FOLD data structures.
 -- so far we have mostly folded over lists. BUT we can fold over almost any data
@@ -179,12 +186,13 @@ test21 = getFirst' $ mconcat' [First' Nothing, First' Nothing, First' (Just 3), 
 -- ghci> :t F.foldr
 -- F.foldr :: (F.Foldable t) => (a -> b -> b) -> b -> t a -> b
 
-
 -- folding over a Maybe.
 test22 = F.foldr (||) False (Just True)
+
 -- TODO: why do we need the parenthesis around -1? Would it else be interpreted
 -- as a function that is partially applied with 1?
 test23 = F.foldr (+) (-1) (Just 4)
+
 -- --> pretty boring since it behaves basicly like a list with one entry.
 
 -- folding over custom data structures. E.g. our BinaryTree from the
@@ -193,5 +201,44 @@ data BinaryTree a
   = EmptyTree
   | Node a (BinaryTree a) (BinaryTree a)
   deriving (Show, Read, Eq)
+-- when making something an instance of foldable we can either: implement foldr
+-- for the instance OR implement foldMap for the instance.
+-- foldMap :: (Monoid m, Foldable t) => (a -> m) -> t a -> m
+-- by implementing foldMap for some type we get foldr and foldl implementations
+-- for free.
+-- TODO: how does this work without f x resulting in a monoid? We know F.foldmap
+-- f l results in one, and F.foldMap f r results in one.. but f x?
+-- --> we also know it about f x since foldmap takes a function that takes a
+-- value of any type and returns a monoid/box with that value inside.
+instance F.Foldable BinaryTree where
+    foldMap f EmptyTree = mempty
+    foldMap f (Node x l r) = F.foldMap f l `mappend`
+                                                  f x `mappend`
+                                                  F.foldMap f r
 
--- TODO(pierre): continue here.
+testTree = Node 5
+            (Node 3
+                (Node 1 EmptyTree EmptyTree)
+                (Node 6 EmptyTree EmptyTree)
+            )
+            (Node 9
+                (Node 8 EmptyTree EmptyTree)
+                (Node 10 EmptyTree EmptyTree)
+            )
+test24 = foldl (+) 0 testTree
+test25 = foldl (*) 1 testTree
+test26 = foldl (\acc x -> if x < 10 then acc + x else acc) 0 testTree
+
+-- NOTE: using the real Any for this one. Since the own implementation did throw
+-- an error?
+-- TODO: why did we get an error with Any' ??
+-- checking if any value in our tree has value 6
+test27 = getAny $ F.foldMap (\x -> Any $ x == 6) testTree
+-- checking if any value in our tree is > 10
+test28 = getAny $ F.foldMap (\x -> Any $ x > 10) testTree
+-- convert tree to list
+test29 = F.foldMap (\x -> [x]) testTree
+-- all of this does not only work on BinaryTree.. it works on EVERY INSTANCE of
+-- Foldable <3
+--
+-- CONTINUE AT Monads.hs
