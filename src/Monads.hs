@@ -385,14 +385,14 @@ knightMoves = do
   bigStepRow ++ smallStepRow
 
 makeMoves :: Position -> Moves -> [Position]
-makeMoves (startRow, startCol) = map (\(row, col) -> (startRow + row, startCol + col))
+makeMoves (startRow, startCol) = filter inBoard . map (\(row, col) -> (startRow + row, startCol + col))
 
 reachablePositions :: Position -> [Position]
 reachablePositions start = do
     first <- makeMoves start knightMoves
     second <- makeMoves first knightMoves
     third <- makeMoves second knightMoves
-    filter inBoard [first, second, third]
+    return third
 
 canReach :: Position -> Position -> Bool
 canReach start end = end `elem` reachablePositions start
@@ -403,4 +403,52 @@ inBoard (row, col) = all (== True) $ [(>= 1), (<= 8)] <*> [row, col]
 
 
 -- SOLUTION
---
+type KnightPos = (Int,Int)
+moveKnight :: KnightPos -> [KnightPos]
+moveKnight (c,r) = do
+    (c',r') <- [(c+2,r-1),(c+2,r+1),(c-2,r-1),(c-2,r+1)
+               ,(c+1,r-2),(c+1,r+2),(c-1,r-2),(c-1,r+2)
+               ]
+    guard (c' `elem` [1..8] && r' `elem` [1..8])
+    return (c',r')
+-- without list monad
+-- moveKnight :: KnightPos -> [KnightPos]
+-- moveKnight (c,r) = filter onBoard
+--     [(c+2,r-1),(c+2,r+1),(c-2,r-1),(c-2,r+1)
+--     ,(c+1,r-2),(c+1,r+2),(c-1,r-2),(c-1,r+2)
+--     ]
+--     where onBoard (c,r) = c `elem` [1..8] && r `elem` [1..8]
+in3' :: KnightPos -> [KnightPos]
+in3' start = do
+    first <- moveKnight start
+    second <- moveKnight first
+    moveKnight second
+-- same without do notation.
+in3 :: KnightPos -> [KnightPos]
+in3 start = return start >>= moveKnight >>= moveKnight >>= moveKnight
+canReachIn3 :: KnightPos -> KnightPos -> Bool
+canReachIn3 start end = end `elem` in3 start
+
+
+-- MONAD LAWS:
+-- 1) LEFT IDENTITY --> return x >>= f is the same damn thing as f x
+leftIdMaybe1 = return 3 >>= (\x -> Just (x+100000))
+leftIdMaybe2 = (\x -> Just (x+100000)) 3
+leftIdString1 = return "WoM" >>= (\x -> [x,x,x])
+leftIdString2 = (\x -> [x,x,x]) "WoM"
+-- 2) RIGHT IDENTITY
+-- The second law states that if we have a monadic value and we use >>= to feed
+-- it to return, the result is our original monadic value. Formally:
+-- m >>= return is no different than just m
+
+-- for maybe
+rightId1 = Just "move on up" >>= (\x -> return x)
+-- for []
+rightId2 =  [1,2,3,4] >>= (\x -> return x)
+-- for IO
+rightId3 = putStrLn "Wah!" >>= (\x -> return x)
+-- 3) ASSOCIATIVITY
+-- "The final monad law says that when we have a chain of monadic function
+-- applications with >>=, it shouldn't matter how they're nested."
+-- Doing (m >>= f) >>= g is just like doing m >>= (\x -> f x >>= g)
+
