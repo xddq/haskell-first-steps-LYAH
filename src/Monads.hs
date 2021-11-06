@@ -2,6 +2,8 @@
 -- monads are basicly just beefed up applicative functors. same as applicative
 -- functors are just beefed up functors. just as functors are just beefed up
 -- values. (this is not 100% correct, but a way to think of the hierarchy)
+-- for MonadPlus, guards
+import Control.Monad
 
 -- reminder:
 -- - fmap: used for mapping functions over Functors (stuff that can be mapped over)
@@ -146,21 +148,25 @@ landRight' :: Birds -> Pole -> Maybe Pole
 landRight' x (left, right) = landLeft' x (right, left)
 
 -- check if pierre falls down
-test12 = landLeft' 4 (0,0)
-test13 = landLeft' 3 (0,0)
+test12 = landLeft' 4 (0, 0)
+
+test13 = landLeft' 3 (0, 0)
 
 -- so how to chain them now? we need Monad power?
 -- following pairs of two are equal.
-test14 = landLeft' 3 (0,0) >>= landLeft' (-1) >>= landLeft' 1
-test15 = return (0,0) >>= landLeft' 3 >>= landLeft' (-1) >>= landLeft' 1
+test14 = landLeft' 3 (0, 0) >>= landLeft' (-1) >>= landLeft' 1
 
-test16 = landLeft' 0 (0,0) >>= landLeft' (-1) >>= landLeft' 1 >>= landRight' 10
-test17 = return (0,0) >>= landLeft' (-1) >>= landLeft' 1 >>= landRight' 10
+test15 = return (0, 0) >>= landLeft' 3 >>= landLeft' (-1) >>= landLeft' 1
+
+test16 = landLeft' 0 (0, 0) >>= landLeft' (-1) >>= landLeft' 1 >>= landRight' 10
+
+test17 = return (0, 0) >>= landLeft' (-1) >>= landLeft' 1 >>= landRight' 10
 
 -- introduce function which makes Pierre fall.
 banana :: Pole -> Maybe Pole
 banana _ = Nothing
-test18 = return (0,0) >>= landLeft' (1) >>= landRight' 2 >>= banana >>= landLeft' 1
+
+test18 = return (0, 0) >>= landLeft' (1) >>= landRight' 2 >>= banana >>= landLeft' 1
 
 -- "instead of coding banana with a function that takes any value and returns
 -- the predetermined monadic value we can use >>."
@@ -169,10 +175,10 @@ test18 = return (0,0) >>= landLeft' (1) >>= landRight' 2 >>= banana >>= landLeft
 -- --> we can replace banana with >> to introduce guaranteed failure!
 -- TODO: why would we need/do this? XD It does take monad context into
 -- consideration.. but still, why would we return guaranteed failure?
-test19 = return (0,0) >>= landLeft' (1) >>= landRight' 2 >> Nothing >>= landLeft' 1
+test19 = return (0, 0) >>= landLeft' (1) >>= landRight' 2 >> Nothing >>= landLeft' 1
+
 -- >>= with Maybe is a classic example of computations that are based on
 -- computations that might have failed.
-
 
 -- do NOTATION
 -- - since monads are used everywhere in Haskell they get their own notation.
@@ -181,32 +187,44 @@ test19 = return (0,0) >>= landLeft' (1) >>= landRight' 2 >> Nothing >>= landLeft
 -- The semantic has not changed. but it can be used for every type that is an
 -- instance of the Monda typeclass!
 reminder4 = Just 3 >>= (\x -> Just (show x ++ "!"))
+
 -- TODO(pierre): try to understand the lambda inside of lambda stuff.
 -- - first x is 3, then we get Just "!" where "!" will be fed into the second
 -- lambda. so x is 3 and y is "!". Then we call show 3 ++ "!" which we get as
 -- the result.
 test20 = Just 3 >>= (\x -> Just "!" >>= (\y -> Just (show x ++ y)))
+
 -- this is pretty similar to
 test21 = let x = 3; y = "!" in show x ++ y
+
 -- difference between 20 and 21 is that 20 consists of boxed/monadic values
 -- which in this context contain a failure case.
 -- failure cases:
 -- TODO: why does this fail? Try typing it?
 -- test22 = Nothing >>= (\x -> Just "!" >>= (\y -> Just (show x ++ y)))
 test23 = Just 3 >>= (\x -> Nothing >>= (\y -> Just (show x ++ y)))
+
 test24 = Just 3 >>= (\x -> Just "!" >>= (\y -> Nothing))
+
 -- to make the similarity between the do notation clearer.. : ]
 test25 :: Maybe String
-test25 = Just 3   >>= (\x ->
-      Just "!" >>= (\y ->
-      Just (show x ++ y)))
+test25 =
+  Just 3
+    >>= ( \x ->
+            Just "!"
+              >>= ( \y ->
+                      Just (show x ++ y)
+                  )
+        )
+
 -- and to avoid having to write tons of lambdas and bind them, haskell comes to
 -- the rescue with do notation.
 test26 :: Maybe String
 test26 = do
-    x <- Just 3
-    y <- Just "!"
-    Just (show x ++ y)
+  x <- Just 3
+  y <- Just "!"
+  Just (show x ++ y)
+
 -- --> takeaway: do notation/syntax is just syntactic sugar for chaining
 -- (repeatedly binding/>>=) monadic values.
 -- every line inside a do notation is a monadic value --> we have to use <- to
@@ -218,9 +236,171 @@ test26 = do
 -- pierres balance act can also be described in do notation.
 routine :: Maybe Pole
 routine = do
-    start <- return (0,0)
-    first <- landLeft' 1 start
-    second <- landRight' 2 first
-    landLeft' 1 second
+  start <- return (0, 0)
+  first <- landLeft' 1 start
+  second <- landRight' 2 first
+  landLeft' 1 second
 
--- TODO(pierre): continue at the MarySue part.
+test27 = routine
+
+-- throw banana in pierres routine
+-- writine line without <- is just same as _ <- action
+routine' :: Maybe Pole
+routine' = do
+  start <- return (0, 0)
+  first <- landLeft' 1 start
+  Nothing
+  second <- landRight' 2 first
+  landLeft' 1 second
+
+test28 = routine'
+
+justH :: Maybe Char
+justH = do
+  (x : xs) <- Just "hello"
+  return x
+
+-- default fail implementation for monads:
+-- fail :: (Monad m) => String -> m a
+-- fail msg = error msg
+-- for monads which have context of possible failure (either, maybe) it often
+-- gets reimplemented.
+-- fail for maybe monad:
+-- fail _ = Nothing
+
+-- example of failure:
+-- --> failure (unmatched pattern) causes a monad wide failure instead of a
+-- program wide failure.
+-- TODO: how could we adapt pattern matching here to not fail?
+justFail :: Maybe Char
+justFail = do
+  (x : xs) <- Just ""
+  return x
+
+-- how list is a Monad
+-- instance Monad [] where
+--     return x = [x]
+--     xs >>= f = concat (map f xs)
+--     fail _ = []
+-- NOTE: concat is similar to "flat" in js
+
+-- what are non deterministic values? In the book he said values that can have
+-- multiple values that are correct..? e.g. list with multiple 'possible' values
+-- inside them?
+-- --> using list monad we get all possible results for given data.
+test29 = [3, 4, 5] >>= \x -> [x, - x]
+
+-- for list monad failure is the empty list. [].
+test30 = [] >>= \x -> [1, 2, 3]
+
+test31 = [1, 2, 3] >>= \x -> []
+
+-- NODE: when using list monad the computations can be seen as a tree with each
+-- branch being fulfilled/used.
+-- these all are equal.
+test32 = [1, 2] >>= \num -> ['a', 'b'] >>= \ch -> return (num, ch)
+
+-- list comprehensions is just syntactic sugar for >>=.
+test33 = [(n, ch) | n <- [1, 2], ch <- ['a', 'b']]
+
+-- do notation is just syntactic sugar for >>=.
+test34 :: [(Int, Char)]
+test34 = do
+  -- n is 1 or 2
+  n <- [1, 2]
+  -- ch is a or b
+  ch <- ['a', 'b']
+  -- nondeterministic result will calculate each possible result.
+  return (n, ch)
+
+filterWithGuards1 = [1 .. 50] >>= \x -> guard ('7' `elem` show x) >> return x
+
+-- filtering stuff with list comprehensions.
+test35 = [n | n <- [1 .. 50], '7' `elem` show n]
+
+-- how to do filtering with list monad in bind/>>= notation?
+
+-- is for monads which can also act as monoid. (meaning they have mempty ->
+-- producing the id for the monoid/monad in this case, and being able to apply a
+-- binary function which takes two monoid values as arugments and returns a
+-- monoid/ in this case monad)
+-- all inside Control.Monad.
+-- class Monad m => MonadPlus m where
+--     mzero :: m a
+--     mplus :: m a -> m a -> m a
+-- instance MonadPlus [] where
+--     mzero = []
+--     mplus = (++)
+-- mzero is failure value, mplus concats two list monadsplus.
+-- instance MonadPlus (Maybe a) where
+--     mzero = Nothing
+--     mplus =
+-- guard function.
+-- guard :: (MonadPlus m) => Bool -> m ()
+-- guard True = return ()
+-- guard False = mzero
+
+test36 :: Maybe ()
+test36 = guard (5 > 2)
+
+test37 :: [()]
+test37 = guard (5 > 2)
+
+test38 :: Maybe ()
+test38 = guard (2 > 5)
+
+-- filterWithGuards1 = [1 .. 50] >>= (\x -> guard ('7' `elem` show x) >> return x)
+
+filterWithGuards2 = guard (5 > 2) >> return "nice" :: [String]
+
+-- guard allows us to just evaluate later stuff in chain if we really need it.
+-- if we get a failure value, just return the failure value of the given monad.
+-- ([] for list, Nothing for Maybe, etc..)
+-- TODO: how to chain guards??
+
+-- KNIGHTS QUEST:
+-- chessboard with tuples. first value being the row and second the column.
+-- chessboard is 8x8 Check if the knight can reach the possition in three moves.
+-- --> walk all possible moves three times and check if result is in our
+-- resulting positions list.
+
+type Position = (Int, Int)
+type Moves = [Position]
+
+-- moves the knight can do.
+knightMoves :: [Position]
+knightMoves = do
+  let bigStep = [2, -2]
+  let smallStep = [1, -1]
+  let bigStepRow =
+        bigStep >>= \row ->
+          smallStep
+            >>= \col ->
+              return (row, col)
+  let smallStepRow =
+        smallStep >>= \row ->
+          bigStep
+            >>= \col ->
+              return (row, col)
+  bigStepRow ++ smallStepRow
+
+makeMoves :: Position -> Moves -> [Position]
+makeMoves (startRow, startCol) = map (\(row, col) -> (startRow + row, startCol + col))
+
+reachablePositions :: Position -> [Position]
+reachablePositions start = do
+    first <- makeMoves start knightMoves
+    second <- makeMoves first knightMoves
+    third <- makeMoves second knightMoves
+    filter inBoard [first, second, third]
+
+canReach :: Position -> Position -> Bool
+canReach start end = end `elem` reachablePositions start
+
+-- checks if position is in chessboard (row 1-8, col 1-8)
+inBoard :: Position -> Bool
+inBoard (row, col) = all (== True) $ [(>= 1), (<= 8)] <*> [row, col]
+
+
+-- SOLUTION
+--
