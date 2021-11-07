@@ -44,6 +44,9 @@ class Monoid' m where
 -- NOTE: just using ' after all stuff to not overwrite the base behaviour and
 -- avoid having to prefix stuff because of naming conflicts.
 -- how Lists are a Monoid.
+-- NOTE: this is the old Monoid. Only works because this references our own
+-- implementation of Monoid'. See "FewMoreMonads.hs" for more info when using
+-- Semigroup.
 instance Monoid' [a] where
   mempty' = []
   mappend' = (++)

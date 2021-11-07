@@ -29,7 +29,7 @@ library
 
     -- LANGUAGE extensions used by modules in this package.
     -- other-extensions:
-    build-depends:    base ^>=4.14.3.0, containers, random, bytestring
+    build-depends:    base ^>=4.14.3.0, containers, random, bytestring, mtl
     hs-source-dirs:   src
     default-language: Haskell2010
 
@@ -46,7 +46,8 @@ executable haskell-first-steps
         containers,
         random,
         bytestring,
-        haskell-first-steps
+        haskell-first-steps,
+        mtl
 
     hs-source-dirs:   app
     default-language: Haskell2010
