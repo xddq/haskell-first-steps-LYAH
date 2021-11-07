@@ -5,15 +5,18 @@
 -- used for Sum type.
 
 -- used for Writer Monad.
-import Control.Monad.Writer
+
 -- used for WriterT typedef
-import Data.Functor.Identity
-import Data.Monoid
+
 -- used for random and StdGen
-import System.Random
+
 -- used for state Monad
 import Control.Monad.State
-
+import Control.Monad.Writer
+-- for error section
+import Data.Functor.Identity
+import Data.Monoid
+import System.Random
 
 -- Writer Monad --> values which have another value attached which will be
 -- combined into one log.
@@ -334,20 +337,20 @@ addStuff' = (+) <$> (* 2) <*> (+ 10)
 testAddStuff1 = addStuff 4
 
 testAddStuff2 = addStuff' 4
+
 -- the function Monad is also called the Reader Monad because every function
 -- reads from the same source.
 -- another addStuff implementation to show that a bit clearer.
 addStuff'' :: (Int -> Int)
-addStuff'' x = let
-    a = (*2) x
-    b = (+ 10) x
-    in (a+b)
+addStuff'' x =
+  let a = (* 2) x
+      b = (+ 10) x
+   in (a + b)
 
 -- NOTE: reader/function Monad is useful when we have a lot of functions which
 -- all take one parameter and eventually will be applied to the same thing. e.g.
 -- see addStuff.
 testAddStuff3 = addStuff'' 4
-
 
 -- STATEFUL COMPUTATIONS
 -- reminder: when generating random numbers in an older section we used:
@@ -358,10 +361,11 @@ testAddStuff3 = addStuff'' 4
 -- generate new parameters/functions when getting random stuff.
 threeCoins :: StdGen -> (Bool, Bool, Bool)
 threeCoins gen =
-    let (firstCoin, newGen) = random gen
-        (secondCoin, newGen') = random newGen
-        (thirdCoin, newGen'') = random newGen'
-    in  (firstCoin, secondCoin, thirdCoin)
+  let (firstCoin, newGen) = random gen
+      (secondCoin, newGen') = random newGen
+      (thirdCoin, newGen'') = random newGen'
+   in (firstCoin, secondCoin, thirdCoin)
+
 -- but state Monad comes to the rescue.
 -- lets define a stateful computation as a computation that takes a value of
 -- type state and returns a result and a new value of type state.
@@ -370,21 +374,21 @@ threeCoins gen =
 -- lets model a stack for displaying stateful stuff.
 type Stack = [Int]
 
-pop :: Stack -> (Int,Stack)
-pop (x:xs) = (x,xs)
+pop :: Stack -> (Int, Stack)
+pop (x : xs) = (x, xs)
 
 -- TODO: find out which order of the params is better and find a generic rule,
 -- if there is one. [Stack] -> Int or Int -> [Stack] in this example.
-push :: Stack -> Int -> ((),Stack)
+push :: Stack -> Int -> ((), Stack)
 push xs x = ((), xs)
 
 -- does not make sense. just some random stack stuff. push 3, pop, pop on any
 -- given stack.
 doStackStuff :: Stack -> (Int, Stack)
-doStackStuff xs = let
-    ((),newStack) = push xs 3
-    (a,newStack') = pop newStack
-    in pop newStack'
+doStackStuff xs =
+  let ((), newStack) = push xs 3
+      (a, newStack') = pop newStack
+   in pop newStack'
 
 -- goal: do someting like this instead..
 -- doStackStuff = do
@@ -408,22 +412,24 @@ doStackStuff xs = let
 -- using state monad with out pop and push stack functions.
 -- value will be the result, state will be the list/our stack.
 pop' :: State Stack Int
-pop' = state $ \(x:xs) -> (x,xs)
+pop' = state $ \(x : xs) -> (x, xs)
+
 push' :: Int -> State Stack ()
-push' a = state $ \xs -> ((),a:xs)
+push' a = state $ \xs -> ((), a : xs)
 
 -- had to use StateT here since something in the implementation did change since
 -- the LYAH book. can use state instead of State value constructor to create a
 -- State. Can use the StateT Monad instead of State.
 doStackStuff' :: StateT Stack Identity Int
 doStackStuff' = do
-    push' 3
-    pop'
-    -- a <- pop'
-    -- push' a
-    pop'
+  push' 3
+  pop'
+  -- a <- pop'
+  -- push' a
+  pop'
 
-testStateMonadWithStack1 = runState doStackStuff' [1,2,3]
+testStateMonadWithStack1 = runState doStackStuff' [1, 2, 3]
+
 -- "what if we want to do this: pop one number off the stack and then if that
 -- number is 5 we just put it back onto the stack and stop but if it isn't 5, we
 -- push 3 and 8 back on? Well, here's the code: "
@@ -431,31 +437,34 @@ testStateMonadWithStack1 = runState doStackStuff' [1,2,3]
 -- write a function like that in haskell?
 doCondStackStuff' :: StateT Stack Identity ()
 doCondStackStuff' = do
-    a <- pop'
-    if a == 5
-        then do
-            push' a
-        else do
-            push' 3
-            push' 8
+  a <- pop'
+  if a == 5
+    then do
+      push' a
+    else do
+      push' 3
+      push' 8
 
 -- no 5? push 3 and 8 on stack after pop first.
-testStateMonadWithStack2 = runState doCondStackStuff' [1,2,3]
+testStateMonadWithStack2 = runState doCondStackStuff' [1, 2, 3]
+
 -- since it is 5, push back on stack.
-testStateMonadWithStack3 = runState doCondStackStuff' [5,1,2,3]
+testStateMonadWithStack3 = runState doCondStackStuff' [5, 1, 2, 3]
 
 -- combine our State Identity () and State Identity Int functions into one
 -- function. Can be done since both operate on the State Monad.
 combineStackStuff :: StateT Stack Identity ()
 combineStackStuff = do
-    a <- doStackStuff'
-    if a == 5
-        then doCondStackStuff'
-        else return ()
+  a <- doStackStuff'
+  if a == 5
+    then doCondStackStuff'
+    else return ()
 
-testStateMonadWithStack4 = runState combineStackStuff [1,2,3]
-testStateMonadWithStack5 = runState combineStackStuff [5,2,3]
-testStateMonadWithStack6 = runState combineStackStuff [5,5,2,3]
+testStateMonadWithStack4 = runState combineStackStuff [1, 2, 3]
+
+testStateMonadWithStack5 = runState combineStackStuff [5, 2, 3]
+
+testStateMonadWithStack6 = runState combineStackStuff [5, 5, 2, 3]
 
 -- from Control.Monad.State we get the MonadState typeclass which delivers us
 -- useful functions to set and set state specifically.
@@ -463,16 +472,17 @@ testStateMonadWithStack6 = runState combineStackStuff [5,5,2,3]
 -- put newState = State $ \s -> ((),newState)
 getPutStacks :: StateT Stack Identity ()
 getPutStacks = do
-    stack <- get
-    if stack == [1,2,3]
-        then put $ map (*2) stack
-        else put $ map (+10) stack
+  stack <- get
+  if stack == [1, 2, 3]
+    then put $ map (* 2) stack
+    else put $ map (+ 10) stack
 
-testStateMonadWithStack7 = runState getPutStacks [1,2,3]
-testStateMonadWithStack8 = runState getPutStacks [4,4]
+testStateMonadWithStack7 = runState getPutStacks [1, 2, 3]
+
+testStateMonadWithStack8 = runState getPutStacks [4, 4]
+
 -- what >>= what would like if only working for States:
 -- (>>=) :: State s a -> (a -> State s b) -> State s b
--- TODO: think about this/understand this.
 -- "See how the type of the state s stays the same but the type of the result
 -- can change from a to b? This means that we can glue together several stateful
 -- computations whose results are of different types but the type of the state
@@ -485,9 +495,101 @@ testStateMonadWithStack8 = runState getPutStacks [4,4]
 -- value.
 -- (>>=) :: Maybe a -> (a -> Maybe b) -> Maybe b
 
-
--- Handling randomness with the state monad.
+-- Calculate random numbers using the state Monad.
+-- TODO: check out State Monad again and make sure to understand how 1:1 this
+-- definition fits with out StdGen case. Currently unclear.
+-- - Nice to understand with the push' and pop' code. Our state takes a rndGen
+-- and returns a (result, newStdGen).
+-- Pretty mind boggling for now. Check State Monad definition again. I think every time
+-- we have a function which is like s -> (a,s) we can use it. since random is:
 -- random :: (Random a, RandomGen g) => g -> (a, g)
--- seems to fit our state monad.
--- TODO: Continue here. Make state monad for randomgen by yourself.
--- randomState :: StateT (a, g) Identity a
+-- it is a perfect fit.
+randomSt :: (RandomGen g, Random a) => State g a
+randomSt = state random
+
+doRandomNumbers :: State StdGen (Bool,Bool,Bool)
+doRandomNumbers = do
+   a <- randomSt
+   b <- randomSt
+   c <- randomSt
+   return (a,b,c)
+
+testRandomState1 = runState doRandomNumbers (mkStdGen 1)
+-- --> State Monad enables us to do computations which need to store some kind
+-- of state in between steps in a clean way.
+
+
+-- ERROR HANDLING
+-- Until now we have learned about Maybe being used for computations which might
+-- fail. We did only shortly (if at all) look at Either e a. (e for error, a for
+-- value of any type. just convention, but it is Either a b where both a and b
+-- can be a value of any type.)
+-- reminder for either, check their types :]
+-- - basicly either is a maybe with a context for the type of failure (maybe
+-- only shows that a failure happened, using Nothing)
+testEither1 = Right 4
+testEither2 = Left "Out of monads error O_O!"
+-- NOTE: Either e is the Monad with the type of e being fixed to error.
+-- --> Returning Right values of Either may be of different types. Just
+-- - e type is for types that imlement the strMsg function. E.g. String !
+-- Left/Error here is of type error!
+-- instance (Error e) => Monad (Either e) where
+--     return x = Right x
+--     Right x >>= f = f x
+--     Left err >>= f = Left err
+--     fail msg = Left (strMsg msg)
+-- NOTE: strMsg seems to be deprecated now. Since it was only a small example
+-- and does not seem to be relevant since we mostly use String (I guess) skip
+-- these two lines.
+testEither3 = Left "boom" >>= \x -> return (x+1)
+testEither4 = Right 100 >>= \x -> Left "no way!"
+testEither5 = Right 100 >>= \x -> return (x+200)
+
+-- REIMPLEMENT POLE WALKING with Either as Error Monad.
+-- TODO: Can we reimplement this to also use the state monad on
+-- top of the Either Monad? We would need to build a State where the value is of
+-- type Either String Int and the State is of type Pole/(Int,Int)? And stop with
+-- calculating when the value is a Left?
+type Birds = Int
+
+type Pole = (Int, Int)
+
+landLeft :: Birds -> Pole -> Either String Pole
+landLeft x (left, right) =
+    if abs (newLeft - right ) > 3
+        then Left $ "To many birds! Pierre is falling down! Left: " ++ show newLeft
+                    ++ " right: " ++ show right
+        else Right (left + x, right)
+    where newLeft = (left + x)
+
+landRight :: Birds -> Pole -> Either String Pole
+landRight x (left, right) = landLeft x (right, left)
+
+routine1 :: Either String Pole
+routine1 = do
+  start <- return (0, 0)
+  first <- landLeft 1 start
+  second <- landRight 2 first
+  landLeft 1 second
+
+routine2 :: Either String Pole
+routine2 = do
+  start <- return (0, 0)
+  first <- landLeft 1 start
+  second <- landRight 2 first
+  third <- landLeft 5 second
+  -- NOTE: if after this line some intense computations were listed they would
+  -- not even be ran, since we already had a Left before this.
+  landRight 1 third
+
+
+-- SOME USEFUL MONADIC FUNCTIONS
+-- --> meaning functions that either operate on monadic values or return monadic
+-- values.
+-- - every monad is an applicative functor, every applicative functor is a
+-- monad.
+-- NOTE: nowadays Applicative is required for Monad. Do people use fmap for
+-- Monads of liftM?
+-- liftM :: (Monad m) => (a -> b) -> m a -> m b
+-- fmap :: (Functor f) => (a -> b) -> f a -> f b
+-- TODO: continue here.
