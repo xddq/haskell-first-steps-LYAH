@@ -104,7 +104,7 @@ testAddDrink2 = ("beans", Sum 20) `applyLog''` addDrink `applyLog''` addDrink
 --     (Writer (x,v)) >>= f = let (Writer (y, v')) = f x in Writer (y, v `mappend` v')
 -- expect default identity values inside the second parameter of our resulting
 -- writer.
--- id = 0
+-- id = ""
 testWriter1 = runWriter (return 3 :: Writer String Int)
 
 -- id = Sum 0
@@ -507,17 +507,17 @@ testStateMonadWithStack8 = runState getPutStacks [4, 4]
 randomSt :: (RandomGen g, Random a) => State g a
 randomSt = state random
 
-doRandomNumbers :: State StdGen (Bool,Bool,Bool)
+doRandomNumbers :: State StdGen (Bool, Bool, Bool)
 doRandomNumbers = do
-   a <- randomSt
-   b <- randomSt
-   c <- randomSt
-   return (a,b,c)
+  a <- randomSt
+  b <- randomSt
+  c <- randomSt
+  return (a, b, c)
 
 testRandomState1 = runState doRandomNumbers (mkStdGen 1)
+
 -- --> State Monad enables us to do computations which need to store some kind
 -- of state in between steps in a clean way.
-
 
 -- ERROR HANDLING
 -- Until now we have learned about Maybe being used for computations which might
@@ -528,7 +528,9 @@ testRandomState1 = runState doRandomNumbers (mkStdGen 1)
 -- - basicly either is a maybe with a context for the type of failure (maybe
 -- only shows that a failure happened, using Nothing)
 testEither1 = Right 4
+
 testEither2 = Left "Out of monads error O_O!"
+
 -- NOTE: Either e is the Monad with the type of e being fixed to error.
 -- --> Returning Right values of Either may be of different types. Just
 -- - e type is for types that imlement the strMsg function. E.g. String !
@@ -541,9 +543,11 @@ testEither2 = Left "Out of monads error O_O!"
 -- NOTE: strMsg seems to be deprecated now. Since it was only a small example
 -- and does not seem to be relevant since we mostly use String (I guess) skip
 -- these two lines.
-testEither3 = Left "boom" >>= \x -> return (x+1)
+testEither3 = Left "boom" >>= \x -> return (x + 1)
+
 testEither4 = Right 100 >>= \x -> Left "no way!"
-testEither5 = Right 100 >>= \x -> return (x+200)
+
+testEither5 = Right 100 >>= \x -> return (x + 200)
 
 -- REIMPLEMENT POLE WALKING with Either as Error Monad.
 -- TODO: Can we reimplement this to also use the state monad on
@@ -556,11 +560,15 @@ type Pole = (Int, Int)
 
 landLeft :: Birds -> Pole -> Either String Pole
 landLeft x (left, right) =
-    if abs (newLeft - right ) > 3
-        then Left $ "To many birds! Pierre is falling down! Left: " ++ show newLeft
-                    ++ " right: " ++ show right
-        else Right (left + x, right)
-    where newLeft = (left + x)
+  if abs (newLeft - right) > 3
+    then
+      Left $
+        "To many birds! Pierre is falling down! Left: " ++ show newLeft
+          ++ " right: "
+          ++ show right
+    else Right (left + x, right)
+  where
+    newLeft = (left + x)
 
 landRight :: Birds -> Pole -> Either String Pole
 landRight x (left, right) = landLeft x (right, left)
@@ -582,7 +590,6 @@ routine2 = do
   -- not even be ran, since we already had a Left before this.
   landRight 1 third
 
-
 -- SOME USEFUL MONADIC FUNCTIONS
 -- --> meaning functions that either operate on monadic values or return monadic
 -- values.
@@ -590,6 +597,258 @@ routine2 = do
 -- monad.
 -- NOTE: nowadays Applicative is required for Monad. Do people use fmap for
 -- Monads of liftM?
+-- --> use fmap for everything. forget liftM.
+-- src: https://www.reddit.com/r/haskell/comments/qow9za/lyah_beginner_questions/
 -- liftM :: (Monad m) => (a -> b) -> m a -> m b
 -- fmap :: (Functor f) => (a -> b) -> f a -> f b
--- TODO: continue here.
+-- don't even learn about liftM and ap. use fmap and <*> instead. (every monad is
+-- nowadays also defined as an applicative.)
+
+-- liftA2
+-- liftA2 :: (Applicative f) => (a -> b -> c) -> f a -> f b -> f c
+-- short notation for wrapping function into functor context, and applying it to
+-- both functors. returning the functor containing the result of the binary
+-- function and applied to both functors.
+-- liftA2 f x y = f <$> x <*> y
+
+-- JOIN
+-- used to flatten monadic values. e.g. join Just (Just 10) --> Just 10
+-- join :: (Monad m) => m (m a) -> m a
+-- TODO: can the nested monads also be of different type? e.g. state monad and
+-- maybe monad? Which one will be the result? the inner or the outer?
+-- --> seems like monads have to be of same type !!! either monads nested, maybe monads
+-- nested etc.. 'monad combinators' should be the solution I think. but study
+-- after finish LYAH book.
+
+-- joining/flattening lists
+-- calls mappend on inner monads --> [1,2,3] `mappend` [4,5,6]
+testJoinLists = join [[1, 2, 3], [4, 5, 6]]
+
+-- joining writer monads
+-- --> calls mappend from value of outer monad with the value of the inner
+-- monad.
+testJoinWriter = runWriter $ join (writer (writer (1, "aaa"), "bbb"))
+
+-- flattening/joining Either monad
+testJoinEather = join (Right (Right 9))
+
+-- flattening/joining State monad
+testJoinState = runState (join (state $ \s -> (push' 10, 1 : 2 : s))) [0, 0, 0]
+
+-- TODO: how does this work? join somehow joins the result of the function for
+-- the current state with the new state?? Isn't this rather confusing rather
+-- than helpful?
+-- implementation of join:
+join' :: (Monad m) => m (m a) -> m a
+join' mm = do
+  m <- mm
+  m
+
+-- example with Maybe monad:
+joinedMaybes :: Maybe Int
+joinedMaybes = do
+  m <- Just (Just 8)
+  m
+
+-- m >>= f is always the same thing as join (fmap f m)
+boundMaybes1 :: Maybe Int
+boundMaybes1 = Just 3 >>= \x -> Just $ x + 1
+
+-- NOTE: fmap has this type:
+-- fmap :: Functor f => (a -> b) -> f a -> f b
+-- but still the a or b can be monads with values themselves. this is what we
+-- are using here.
+boundMaybes2 :: Maybe Int
+boundMaybes2 = join $ fmap (\x -> Just (x + 1)) (Just 3)
+
+-- NOTE:
+-- this equality can be used to implement >>=. Since it is easier to figure out
+-- how to flatten a monadic value than figuring out how to implement >>=.
+-- TODO: ...okay? Why should this be the case?
+
+-- filterM
+-- xD filterM does filter any applicative value (I think it was kept filterM for
+-- backwards compatibility when applicative was moved into monad typeclass :D)
+reminderFilter1 = filter (\x -> x < 4) [1 .. 10]
+
+-- "Now, let's make a predicate that, aside from presenting a
+-- True or False result, also provides a log of what it did. Of course, we'll be
+-- using the Writer monad for this: "
+-- NOTE: this 16 lines of code were just testing, can ignore.
+filterStuff :: [a] -> Writer [String] [a]
+filterStuff xs = writer (xs, ["Did filter stuff!"])
+
+filterWithLog :: Num a => Writer [String] [a]
+filterWithLog = do
+  a <- filterStuff [1, 2, 3]
+  b <- filterStuff [4, 5, 6]
+  return (a ++ b)
+
+-- predicateWriter :: (a -> Bool) -> Writer [String] Bool
+-- predicateWriter f = writer (f, ["did filter stuff!"])
+--
+-- filterWithLog' :: Writer [String] Bool
+-- filterWithLog' = do
+--     a <- filter
+-- what to do here? call filterM? but we did not have filterM yet..?
+-- SOLUTION:
+filterWithLog' :: Int -> Writer [String] Bool
+filterWithLog' x
+  | x < 4 = do
+    tell $ ["Keeping number: " ++ show x]
+    return True
+  | otherwise = do
+    tell $ ["Throwing number: " ++ show x ++ " away. To big."]
+    return False
+
+testWriterPredicate1 = runWriter $ filterWithLog' 1
+
+testWriterPredicate2 = runWriter $ filterWithLog' 2
+
+testWriterPredicate3 = runWriter $ filterWithLog' 5
+
+-- lets throw this predicate (which returns a monadic value) to filterM!
+testFilterM1 = filterM filterWithLog' [1 .. 10]
+
+-- print the log of the calculation
+testFilterM2 = mapM_ putStrLn . snd . runWriter $ filterM filterWithLog' [9, 4, 30, 2, 1, 10, 3]
+
+-- print the result of the calculation
+testFilterM3 = fst . runWriter $ filterM filterWithLog' [9, 4, 30, 2, 1, 10, 3]
+
+-- can get powerset (all permutations I think?) of a list (if we think of a list
+-- as a set :D) using filterM
+-- using behaviour of list monad (nondeterminism) to create a powerset.
+powerset :: [a] -> [[a]]
+powerset xs = filterM (\x -> [True, False]) xs
+
+-- TODO: try to understand this. I think it is fairly easy if I get my ahead
+-- around the non-determinism of the list monad when checking this out.
+testPowerSet1 = powerset [1, 2, 3]
+
+testPowerSet2 = powerset [4, 5]
+
+-- FOLDM
+-- foldM
+-- --> folding on monads.
+-- Takes a function with acc and x. uses acc and x to create a Monad.
+-- --> I think it is basicly foldl but the result will be wrapped in a Monad.
+-- type signatures:
+-- foldl :: (a -> b -> a) -> a -> [b] -> a
+-- foldM :: (Monad m) => (a -> b -> m a) -> a -> [b] -> m a
+testFoldL1 = foldl (\acc x -> acc + x) 0 [1, 2, 3]
+
+testFoldM1 = foldM (\acc x -> Just (acc + x)) 0 [1, 2, 3]
+
+testFoldM2 = foldM (\acc x -> if even x then Just (acc + x) else Nothing) 0 [1, 2, 3]
+
+testFoldM3 = foldM (\acc x -> if even x then Just (acc + x) else Nothing) 0 [2, 4 .. 20]
+
+-- folding with binary function which returns writer monad:
+foldingFunction :: Int -> Int -> Writer [String] Int
+foldingFunction acc x = do
+  let result = acc + x
+  tell $ ["Current accumulator: " ++ show acc ++ " current x: " ++ show x ++ " result: " ++ show result]
+  return result
+
+-- returns the writer Monad
+testFoldM4 = foldM foldingFunction 0 [1 .. 20]
+
+-- prints log as result
+testFoldM5 = mapM_ putStrLn . snd . runWriter $ foldM foldingFunction 0 [1 .. 20]
+
+-- SAFE RPN CALCULATOR
+-- remember the RPN calculator from src: http://learnyouahaskell.com/functionally-solving-problems#reverse-polish-notation-calculator
+-- in file: FunctionalProblemSolving.hs
+-- "
+-- NOTE: not failsafe yet. will be adapted once we get to know monads.
+solveRPN :: (Read a, Num a) => String -> a
+-- solveRPN expression = head (foldl foldingFunction [] (words expression))
+solveRPN = head . foldl foldingFunction [] . words
+  where
+    foldingFunction (x : y : ys) "*" = (x * y) : ys
+    foldingFunction (x : y : ys) "+" = (x + y) : ys
+    foldingFunction (x : y : ys) "-" = (y - x) : ys
+    -- expect it to be multiple numbers represented as string if it is not one
+    -- of our symbols [*,+,-,..]
+    foldingFunction xs numberString = read numberString : xs
+
+-- "
+-- adapt this to be failsafe :]
+-- TODO: why does reads not work? Probably changed the function again.. But this
+-- time cannot find the correct version right now. Skip this for now. Not to
+-- important.
+readMaybe :: (Read a) => String -> Maybe a
+readMaybe st = case reads st of
+  [(x, "")] -> Just x
+  _ -> Nothing
+
+-- MAYBE: do RPN failsafe.
+
+-- COMPOSING MONADIC FUNCTIONS:
+-- can compose monadic functions using <=<
+-- same as . but for functions of type a -> m b
+-- reminder, normal function composition
+monadicComposition1 = let f = (+ 1) . (* 100) in f 4
+
+-- could also use Just instead of return but return is more generic and since we
+-- are feeding it a Just 4 haskell can infer it will become the type of the
+-- Maybe Monad
+monadicComposition2 = Just 4 >>= f
+  where
+    f = (\x -> return (x + 1)) <=< (\x -> return (x * 100))
+
+-- can compose bunch of functions in a list using foldl and .
+monadicComposition3 = let f = foldr (.) id [(+ 1), (* 100), (+ 1)] in f 1
+
+-- can compose monadic functions more or less in the same way. just using <=<
+-- instead of . and return instead of id.
+-- TODO: why can we use foldl here?
+monadicComposition4 = let f = foldl (<=<) return [(\x -> Just $ x + 1), (\x -> Just $ x * 100), (\x -> Just $ x + 1)] in f 1
+
+-- monadic composition for the moveKnights problem.
+-- first, the
+
+-- copy paste from knights quest from Monads.hs:
+-- SOLUTION
+type KnightPos = (Int, Int)
+
+moveKnight :: KnightPos -> [KnightPos]
+moveKnight (c, r) = do
+  (c', r') <-
+    [ (c + 2, r -1),
+      (c + 2, r + 1),
+      (c -2, r -1),
+      (c -2, r + 1),
+      (c + 1, r -2),
+      (c + 1, r + 2),
+      (c -1, r -2),
+      (c -1, r + 2)
+      ]
+  guard (c' `elem` [1 .. 8] && r' `elem` [1 .. 8])
+  return (c', r')
+
+in3 :: KnightPos -> [KnightPos]
+in3 start = return start >>= moveKnight >>= moveKnight >>= moveKnight
+
+canReachIn3 :: KnightPos -> KnightPos -> Bool
+canReachIn3 start end = end `elem` in3 start
+
+-- new code:
+replicateTest = replicate 3 (\x -> x + 1)
+
+replicateTest1 = map (\x -> x 1) replicateTest
+
+replicateTest2 = replicate 3 moveKnight
+
+replicateTest3 = map (\f -> f (1, 1)) replicateTest2
+
+-- run moveKnight x times with monadic function composition
+replicateTest4 = foldl (<=<) return replicateTest2
+
+canReachIn :: Int -> KnightPos -> KnightPos -> Bool
+canReachIn x start end = end `elem` inX start
+  where
+    inX = foldl (<=<) return $ replicate x moveKnight
+
+-- TODO: continue at Making Monads.

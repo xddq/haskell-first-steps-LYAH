@@ -122,7 +122,7 @@ test16 x y =
     numVowels = length . filter (`elem` "aeiou")
 
 -- --> Ordering monoid allows us to compare different criteria based on
--- different priorities. highest first.
+-return start- different priorities. highest first.
 
 -- how Maybe is a Monoid.
 -- 1) one way is to treat the value which is boxed by maybe as a monoid and then
