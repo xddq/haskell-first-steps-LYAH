@@ -967,19 +967,14 @@ flattenProbs (Prob xs) = Prob $ concat $ map multProbs xs
   where
     multProbs (Prob xsInner, probOuter) = map (\(val, probInner) -> (val, probInner * probOuter)) xsInner
 
--- SOLUTION:
-flatten :: Prob (Prob a) -> Prob a
-flatten (Prob xs) = Prob $ concat $ map multAll xs
-  where
-    multAll (Prob innerxs, p) = map (\(x, r) -> (x, p * r)) innerxs
-
 testFlattenProbs = flattenProbs thisSituation
 
 -- now creating a Monad instance is easy.
 instance Monad Prob where
-    return x = pure x
-    -- m >>= f is equal to join/flatten (fmap f m)
-    m >>= f = flattenProbs (fmap f m)
+  return x = pure x
+
+  -- m >>= f is equal to join/flatten (fmap f m)
+  m >>= f = flattenProbs (fmap f m)
 
 -- check if monad is really a monad by checking sanity of laws:
 -- NOTE: SKIP THE CHECKS FOR NOW.
@@ -990,28 +985,26 @@ instance Monad Prob where
 data Coin = Heads | Tails deriving (Show, Eq)
 
 coin :: Prob Coin
-coin = Prob [(Heads,1%2),(Tails,1%2)]
+coin = Prob [(Heads, 1 % 2), (Tails, 1 % 2)]
 
 loadedCoin :: Prob Coin
-loadedCoin = Prob [(Heads,1%10),(Tails,9%10)]
+loadedCoin = Prob [(Heads, 1 % 10), (Tails, 9 % 10)]
 
 -- flips coins using our probability Monad.
--- TODO: Try to figure out how this works. Probably have to check behaviour of
--- list monad to understand?
--- We get a list of the result with using a, b, and c. But how does all (==Tals)
--- [a,b,c] work??
+-- TODO: Try to figure out how this works.
 flipCoins :: Prob Bool
 flipCoins = do
-    a <- coin
-    b <- coin
-    c <- loadedCoin
-    -- Why does all (==Tails) [a,b,c] work?
-    return (all (==Tails) [a,b,c])
+  a <- coin
+  b <- coin
+  c <- loadedCoin
+  -- Why/How does all (==Tails) [a,b,c] work?
+  return (all (== Tails) [a, b, c])
 
 sumProbs' :: Prob Bool -> Prob Bool
-sumProbs' (Prob xs) = Prob $ [sumProbs $ allFalse xs, sumProbs $ allTrue xs]
-    where allTrue xs = filter (\(val, prob) -> val == True) xs
-          allFalse xs = filter (\(val, prob) -> val == False) xs
-          sumProbs xs = foldl (\(val1, prob1) (val2 ,prob2) -> (val2, prob1+prob2)) (False,0%1) xs
+sumProbs' (Prob xs) = Prob [sumProbs $ allFalse xs, sumProbs $ allTrue xs]
+  where
+    allTrue xs = filter fst xs
+    allFalse xs = filter (not . fst) xs
+    sumProbs xs = foldl (\(val1, prob1) (val2, prob2) -> (val2, prob1 + prob2)) (False, 0 % 1) xs
 
 testProbMonadFlipCoins = getProb $ sumProbs' flipCoins
