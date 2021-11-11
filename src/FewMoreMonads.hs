@@ -16,6 +16,8 @@ import Control.Monad.Writer
 -- for error section
 import Data.Functor.Identity
 import Data.Monoid
+-- for Rational data type
+import Data.Ratio
 import System.Random
 
 -- Writer Monad --> values which have another value attached which will be
@@ -851,4 +853,165 @@ canReachIn x start end = end `elem` inX start
   where
     inX = foldl (<=<) return $ replicate x moveKnight
 
--- TODO: continue at Making Monads.
+-- MAKING MONADS
+-- - normally we don't create monads for creating monads. we rather make a type
+-- which does model an aspect of a certain problem and then can see if we can
+-- make this type with a context a monad instance for easier handling and
+-- composition.
+
+-- lists are non-deterministic monads --> feeding a list [1,2,3] to a function
+-- will result with a list of functions where each function is applied with a
+-- different parameter. For this non-determinism it would be cool to model
+-- chances to certain values. e.g. 1 has 30% chance, 2 has 20% chance etc..
+-- task: model numbers inside a list with probabilities.
+-- haskell has a certain data type 'Rational' for percentages/fractions coming
+-- from Data.Ratio.
+testFractions1 = 1 % 4 + 1 % 5
+
+testFractions2 = 2 % 3 + 1 % 8
+
+-- number and their percentage --> [(Int, Rational)]
+testFractions3 = [(2, 1 % 4), (4, 2 % 4), (9, 1 % 4)]
+
+-- create type that models value and the chance to get that value.
+-- Prob value constructor is of type [(a, Rational)]
+-- we can make an instance using Prob [(1,1%3)], or Prob [("hello",1%4)]
+newtype Prob a = Prob {getProb :: [(a, Rational)]} deriving (Show, Eq)
+
+-- 1) is this a functor?
+-- - what do we want to do when applying functions? --> apply them to the value,
+-- keep the rational.
+-- functor:
+-- fmap :: (a -> b) -> f a -> f b
+instance Functor Prob where
+  fmap f (Prob xs) = Prob $ map (\(val, prob) -> (f val, prob)) xs
+
+-- functor instance declaration worked. now test the functor laws!
+-- 1) fmap id [1,2,3] == id [1,2,3]
+-- 2) function composition does yield the same result.
+-- e.g. fmap g $ fmap f [1,2,3] == fmap (g . f) [1,2,3]
+-- TODO: where/how can we constrain that probabilities should add up to 1?
+testFirstFunctorLaw1 = fmap id $ Prob [(1, 1 % 2), (1, 1 % 3)]
+
+testFirstFunctorLaw2 = id $ Prob [(1, 1 % 2), (1, 1 % 3)]
+
+testFunction1 = (+ 1)
+
+testFunction2 = (* 2)
+
+testFunctorLawComposition1 = fmap testFunction2 $ fmap testFunction1 [1, 2, 3]
+
+testFunctorLawComposition2 = fmap (testFunction2 . testFunction1) [1, 2, 3]
+
+functorLawsHold =
+  testFirstFunctorLaw1 == testFirstFunctorLaw2
+    && testFunctorLawComposition1 == testFunctorLawComposition2
+
+-- 2) can we make this an Applicative?
+instance Applicative Prob where
+  pure x = Prob [(x, 1 % 1)]
+
+  -- Why does this not work? :[
+  -- xs --> [(f,ratio), (g, ratio), (h, ratio)];
+  -- ys --> [(val,ratio), (val,ratio), ...]
+  -- (Prob xs) <*> (Prob ys) = Prob (map (\x -> fmap x ys) xs)
+  -- NOTE: Did this by checking how [] is an Applicative and applying it to
+  -- Prob :] Still.. why did this above not work?
+  (Prob fs) <*> (Prob xs) = Prob ([(f x, ratio) | (f, _) <- fs, (x, ratio) <- xs])
+
+-- check the applicative laws (making something an instance does not mean it
+-- really belongs to the mathematical type we are trying to mimic!)
+-- 1) pure id <*> a = a
+-- 2) pure (.) <*> f <*> g <*> x = f <*> ( g <*> x)
+-- 3) pure f <*> pure x = pure (f x)
+-- 4) u <*> pure y = pure ($ y) <*> u
+-- NOTE: don't test them right now. do once finished. is the 4) a typo?? ($ y)
+-- ??
+
+-- 3) can we make this a Monad?
+-- - check how list was made a Monad and figure out how to make Prob a Monad
+-- how list is a Monad:
+-- instance Monad [] where
+--     return x = [x]
+--     xs >>= f = concat (map f xs)
+--     fail _ = []
+-- NOTE: What should we do with ratios? Keep the old ones? Do nothing? Check
+-- solution.
+-- instance Monad Prob where
+--     return x = pure x
+--     Prob xs >>= f = Prob ([ f val | (val, ratio) <- xs])
+-- SOLUTION:
+-- since >>= seems kind of tricky and >>= is equal to join (fmap f xs) we are
+-- trying to implement join/flattening.
+-- Given: Prob [(val, rational)]
+-- --> Prob (Prob $ [(val, rationalInner)], rationalOuter )
+-- This would mean that the values of the inner Prob (e.g. (2, 1%2) would come
+-- up with the chance of the outer Prob (e.g. 1%4). How to get the resulting
+-- probability? Multiply them!
+-- flattenProbs (Prob (Prob xs, probOuter)) = Prob (map (\(val,probInner) -> (val, probInner * probOuter)) xs)
+-- TODO: why does this not work? :[
+-- - because we have a list of prob xs, and probOuter, not just a Prob xs and
+-- Probouter !!
+
+thisSituation :: Prob (Prob Char)
+thisSituation =
+  Prob
+    [ (Prob [('a', 1 % 2), ('b', 1 % 2)], 1 % 4),
+      (Prob [('c', 1 % 2), ('d', 1 % 2)], 3 % 4)
+    ]
+
+flattenProbs :: Prob (Prob a) -> Prob a
+-- multProps for every outer list containing a Prop with a list of tuples and an
+-- outer prob. call concat/flat to create one list with of tuples.
+flattenProbs (Prob xs) = Prob $ concat $ map multProbs xs
+  where
+    multProbs (Prob xsInner, probOuter) = map (\(val, probInner) -> (val, probInner * probOuter)) xsInner
+
+-- SOLUTION:
+flatten :: Prob (Prob a) -> Prob a
+flatten (Prob xs) = Prob $ concat $ map multAll xs
+  where
+    multAll (Prob innerxs, p) = map (\(x, r) -> (x, p * r)) innerxs
+
+testFlattenProbs = flattenProbs thisSituation
+
+-- now creating a Monad instance is easy.
+instance Monad Prob where
+    return x = pure x
+    -- m >>= f is equal to join/flatten (fmap f m)
+    m >>= f = flattenProbs (fmap f m)
+
+-- check if monad is really a monad by checking sanity of laws:
+-- NOTE: SKIP THE CHECKS FOR NOW.
+-- 1) return x >>= f is equal to f x
+-- 2) m >>= return is equal to m
+-- 3) (m >>= f) >>= g is equal to m >>= (\x -> f x >>= g)
+
+data Coin = Heads | Tails deriving (Show, Eq)
+
+coin :: Prob Coin
+coin = Prob [(Heads,1%2),(Tails,1%2)]
+
+loadedCoin :: Prob Coin
+loadedCoin = Prob [(Heads,1%10),(Tails,9%10)]
+
+-- flips coins using our probability Monad.
+-- TODO: Try to figure out how this works. Probably have to check behaviour of
+-- list monad to understand?
+-- We get a list of the result with using a, b, and c. But how does all (==Tals)
+-- [a,b,c] work??
+flipCoins :: Prob Bool
+flipCoins = do
+    a <- coin
+    b <- coin
+    c <- loadedCoin
+    -- Why does all (==Tails) [a,b,c] work?
+    return (all (==Tails) [a,b,c])
+
+sumProbs' :: Prob Bool -> Prob Bool
+sumProbs' (Prob xs) = Prob $ [sumProbs $ allFalse xs, sumProbs $ allTrue xs]
+    where allTrue xs = filter (\(val, prob) -> val == True) xs
+          allFalse xs = filter (\(val, prob) -> val == False) xs
+          sumProbs xs = foldl (\(val1, prob1) (val2 ,prob2) -> (val2, prob1+prob2)) (False,0%1) xs
+
+testProbMonadFlipCoins = getProb $ sumProbs' flipCoins
