@@ -1,28 +1,28 @@
 -- src: http://learnyouahaskell.com/for-a-few-monads-more
 -- remider:
--- - Maybe Monad --> adds context of possible failure
--- - List Monad --> adds context of non-deterministic
+-- - Maybe Monad --> represents operations on possibly failed values.
+-- - List Monad --> represents operations on non-deterministic values.
 -- used for Sum type.
-
 -- used for Writer Monad.
+import Control.Monad.State
 
 -- used for WriterT typedef
-
--- used for random and StdGen
-
--- used for state Monad
-import Control.Monad.State
 import Control.Monad.Writer
+
 -- for error section
 import Data.Functor.Identity
+
+-- used for state Monad
 import Data.Monoid
+
 -- for Rational data type
 import Data.Ratio
+
+-- used for random and StdGen
 import System.Random
 
 -- Writer Monad --> values which have another value attached which will be
 -- combined into one log.
-
 -- checks if gang is big.
 isBigGang' :: Int -> Bool
 isBigGang' = (> 9)
@@ -50,7 +50,8 @@ testApplyLog1 = (30, "A freaking platoon.") `applyLog` isBigGang
 testApplyLog2 = (3, "Smallish gang.") `applyLog` isBigGang
 
 -- test with (String, String)
-testApplyLog3 = ("Tobin", "Got outlaw name.") `applyLog` (\x -> (length x, "Applied length."))
+testApplyLog3 =
+  ("Tobin", "Got outlaw name.") `applyLog` (\x -> (length x, "Applied length."))
 
 -- applyLog to include lists of any type beside just chars.
 applyLog' :: (a, [c]) -> (a -> (b, [c])) -> (b, [c])
@@ -93,7 +94,6 @@ testAddDrink2 = ("beans", Sum 20) `applyLog''` addDrink `applyLog''` addDrink
 
 -- --> so we can build a reader Monad which could log messages, add up costs or
 -- do whatever the characteristic of the given Monoid is.
-
 -- WRITER Monad
 -- we have just seen what a value with an attached Monoid value can be used for.
 -- Now lets explore what can happen with a value with an attached Monad.
@@ -151,14 +151,16 @@ gcd' a b
 -- NOTE: here again we had to adapt the type definition to match the mtl 2.X
 gcd'' :: Int -> Int -> WriterT [String] Identity Int
 gcd'' a b
-  | b == 0 = do
+  | b == 0
     -- can use tell here because we are inside the Writer monad within the
     -- do block.
+   = do
     tell ["Finished with: " ++ show b]
     return b
-  | otherwise = do
+  | otherwise
     -- can use tell here because we are inside the Writer monad within the
     -- do block.
+   = do
     tell [show a ++ " mod " ++ show b ++ " = " ++ show (a `mod` b)]
     gcd'' b (a `mod` b)
 
@@ -211,7 +213,10 @@ diffListApproach2 = ("dog" ++) `append` ("meat" ++) `append` ("hello" ++)
 
 diffListApproach3 = diffListApproach2 "world"
 
-newtype DiffList a = DiffList {getDiffList :: [a] -> [a]}
+newtype DiffList a =
+  DiffList
+    { getDiffList :: [a] -> [a]
+    }
 
 toDiffList :: [a] -> DiffList a
 toDiffList xs = DiffList (xs ++)
@@ -233,11 +238,11 @@ instance Monoid (DiffList a) where
   mempty = toDiffList []
 
 -- mappend = (diffListappend)
-
 -- <> is the same as `mappend`
 testDiffList1 = fromDiffList $ toDiffList [1, 2, 3] <> toDiffList [4, 5, 6]
 
-testDiffList2 = fromDiffList $ toDiffList [1, 2, 3] `mappend` toDiffList [4, 5, 6]
+testDiffList2 =
+  fromDiffList $ toDiffList [1, 2, 3] `mappend` toDiffList [4, 5, 6]
 
 -- apply diffLists to gcdReverse to avoid the right associativity problem
 -- (concat longer and longer lists with small lists multiple times.) see above
@@ -253,8 +258,7 @@ gcdReverseDiffList a b
     return result
 
 testGcdReverseDiffList =
-  mapM_ putStrLn . fromDiffList . snd . runWriter $
-    gcdReverseDiffList 110 34
+  mapM_ putStrLn . fromDiffList . snd . runWriter $ gcdReverseDiffList 110 34
 
 -- comparing performance between diffList (fixes right associativity problem)
 -- and a right associatively built/constructed list.
@@ -266,7 +270,7 @@ countdownRightAssoc x
     tell ["Finished!"]
     return x
   | otherwise = do
-    result <- countdownRightAssoc (x -1)
+    result <- countdownRightAssoc (x - 1)
     tell ["At " ++ show x]
     return result
 
@@ -276,7 +280,7 @@ countdownRightAssocDiffList x
     tell $ toDiffList ["Finished!"]
     return x
   | otherwise = do
-    result <- countdownRightAssocDiffList (x -1)
+    result <- countdownRightAssocDiffList (x - 1)
     tell $ toDiffList ["At " ++ show x]
     return result
 
@@ -286,14 +290,17 @@ finalCountDown :: Int -> Writer (DiffList String) ()
 finalCountDown 0 = do
   tell (toDiffList ["0"])
 finalCountDown x = do
-  finalCountDown (x -1)
+  finalCountDown (x - 1)
   tell (toDiffList [show x])
 
 -- NOTE: if you really don't see a difference in speed just increase the value
 -- given here.
-testCountdownRightAssoc = mapM_ putStrLn . snd . runWriter $ countdownRightAssoc 5000
+testCountdownRightAssoc =
+  mapM_ putStrLn . snd . runWriter $ countdownRightAssoc 5000
 
-testCountdownRightAssocDiffList = mapM_ putStrLn . fromDiffList . snd . runWriter $ countdownRightAssocDiffList 5000
+testCountdownRightAssocDiffList =
+  mapM_ putStrLn . fromDiffList . snd . runWriter $
+  countdownRightAssocDiffList 5000
 
 -- READER Monad
 -- --> about combining functions with Monads.
@@ -322,7 +329,6 @@ reminderFunctorFuncComp3 x = (+) <$> (* 2) <*> (+ 5) $ x
 -- something, which is why we do (h w) here to get the result from the function and
 -- then we apply f to that. f returns a monadic value, which is a function in our
 -- case, so we apply it to w as well. "
-
 -- can use do expression for Int -> Int since it equal to (Int -> Int) and
 -- functions are Monads.
 -- these two are equal in their result.
@@ -372,12 +378,11 @@ threeCoins gen =
 -- lets define a stateful computation as a computation that takes a value of
 -- type state and returns a result and a new value of type state.
 -- s -> (a,s)
-
 -- lets model a stack for displaying stateful stuff.
 type Stack = [Int]
 
 pop :: Stack -> (Int, Stack)
-pop (x : xs) = (x, xs)
+pop (x:xs) = (x, xs)
 
 -- TODO: find out which order of the params is better and find a generic rule,
 -- if there is one. [Stack] -> Int or Int -> [Stack] in this example.
@@ -414,7 +419,7 @@ doStackStuff xs =
 -- using state monad with out pop and push stack functions.
 -- value will be the result, state will be the list/our stack.
 pop' :: State Stack Int
-pop' = state $ \(x : xs) -> (x, xs)
+pop' = state $ \(x:xs) -> (x, xs)
 
 push' :: Int -> State Stack ()
 push' a = state $ \xs -> ((), a : xs)
@@ -496,7 +501,6 @@ testStateMonadWithStack8 = runState getPutStacks [4, 4]
 -- E.g. Maybe Monad will also stay Maybe, but may result in another type of
 -- value.
 -- (>>=) :: Maybe a -> (a -> Maybe b) -> Maybe b
-
 -- Calculate random numbers using the state Monad.
 -- TODO: check out State Monad again and make sure to understand how 1:1 this
 -- definition fits with out StdGen case. Currently unclear.
@@ -520,7 +524,6 @@ testRandomState1 = runState doRandomNumbers (mkStdGen 1)
 
 -- --> State Monad enables us to do computations which need to store some kind
 -- of state in between steps in a clean way.
-
 -- ERROR HANDLING
 -- Until now we have learned about Maybe being used for computations which might
 -- fail. We did only shortly (if at all) look at Either e a. (e for error, a for
@@ -563,11 +566,9 @@ type Pole = (Int, Int)
 landLeft :: Birds -> Pole -> Either String Pole
 landLeft x (left, right) =
   if abs (newLeft - right) > 3
-    then
-      Left $
-        "To many birds! Pierre is falling down! Left: " ++ show newLeft
-          ++ " right: "
-          ++ show right
+    then Left $
+         "To many birds! Pierre is falling down! Left: " ++
+         show newLeft ++ " right: " ++ show right
     else Right (left + x, right)
   where
     newLeft = (left + x)
@@ -605,14 +606,12 @@ routine2 = do
 -- fmap :: (Functor f) => (a -> b) -> f a -> f b
 -- don't even learn about liftM and ap. use fmap and <*> instead. (every monad is
 -- nowadays also defined as an applicative.)
-
 -- liftA2
 -- liftA2 :: (Applicative f) => (a -> b -> c) -> f a -> f b -> f c
 -- short notation for wrapping function into functor context, and applying it to
 -- both functors. returning the functor containing the result of the binary
 -- function and applied to both functors.
 -- liftA2 f x y = f <$> x <*> y
-
 -- JOIN
 -- used to flatten monadic values. e.g. join Just (Just 10) --> Just 10
 -- join :: (Monad m) => m (m a) -> m a
@@ -621,7 +620,6 @@ routine2 = do
 -- --> seems like monads have to be of same type !!! either monads nested, maybe monads
 -- nested etc.. 'monad combinators' should be the solution I think. but study
 -- after finish LYAH book.
-
 -- joining/flattening lists
 -- calls mappend on inner monads --> [1,2,3] `mappend` [4,5,6]
 testJoinLists = join [[1, 2, 3], [4, 5, 6]]
@@ -667,7 +665,6 @@ boundMaybes2 = join $ fmap (\x -> Just (x + 1)) (Just 3)
 -- this equality can be used to implement >>=. Since it is easier to figure out
 -- how to flatten a monadic value than figuring out how to implement >>=.
 -- TODO: ...okay? Why should this be the case?
-
 -- filterM
 -- xD filterM does filter any applicative value (I think it was kept filterM for
 -- backwards compatibility when applicative was moved into monad typeclass :D)
@@ -713,7 +710,9 @@ testWriterPredicate3 = runWriter $ filterWithLog' 5
 testFilterM1 = filterM filterWithLog' [1 .. 10]
 
 -- print the log of the calculation
-testFilterM2 = mapM_ putStrLn . snd . runWriter $ filterM filterWithLog' [9, 4, 30, 2, 1, 10, 3]
+testFilterM2 =
+  mapM_ putStrLn . snd . runWriter $
+  filterM filterWithLog' [9, 4, 30, 2, 1, 10, 3]
 
 -- print the result of the calculation
 testFilterM3 = fst . runWriter $ filterM filterWithLog' [9, 4, 30, 2, 1, 10, 3]
@@ -742,22 +741,40 @@ testFoldL1 = foldl (\acc x -> acc + x) 0 [1, 2, 3]
 
 testFoldM1 = foldM (\acc x -> Just (acc + x)) 0 [1, 2, 3]
 
-testFoldM2 = foldM (\acc x -> if even x then Just (acc + x) else Nothing) 0 [1, 2, 3]
+testFoldM2 =
+  foldM
+    (\acc x ->
+       if even x
+         then Just (acc + x)
+         else Nothing)
+    0
+    [1, 2, 3]
 
-testFoldM3 = foldM (\acc x -> if even x then Just (acc + x) else Nothing) 0 [2, 4 .. 20]
+testFoldM3 =
+  foldM
+    (\acc x ->
+       if even x
+         then Just (acc + x)
+         else Nothing)
+    0
+    [2,4 .. 20]
 
 -- folding with binary function which returns writer monad:
 foldingFunction :: Int -> Int -> Writer [String] Int
 foldingFunction acc x = do
   let result = acc + x
-  tell $ ["Current accumulator: " ++ show acc ++ " current x: " ++ show x ++ " result: " ++ show result]
+  tell $
+    [ "Current accumulator: " ++
+      show acc ++ " current x: " ++ show x ++ " result: " ++ show result
+    ]
   return result
 
 -- returns the writer Monad
 testFoldM4 = foldM foldingFunction 0 [1 .. 20]
 
 -- prints log as result
-testFoldM5 = mapM_ putStrLn . snd . runWriter $ foldM foldingFunction 0 [1 .. 20]
+testFoldM5 =
+  mapM_ putStrLn . snd . runWriter $ foldM foldingFunction 0 [1 .. 20]
 
 -- SAFE RPN CALCULATOR
 -- remember the RPN calculator from src: http://learnyouahaskell.com/functionally-solving-problems#reverse-polish-notation-calculator
@@ -768,9 +785,9 @@ solveRPN :: (Read a, Num a) => String -> a
 -- solveRPN expression = head (foldl foldingFunction [] (words expression))
 solveRPN = head . foldl foldingFunction [] . words
   where
-    foldingFunction (x : y : ys) "*" = (x * y) : ys
-    foldingFunction (x : y : ys) "+" = (x + y) : ys
-    foldingFunction (x : y : ys) "-" = (y - x) : ys
+    foldingFunction (x:y:ys) "*" = (x * y) : ys
+    foldingFunction (x:y:ys) "+" = (x + y) : ys
+    foldingFunction (x:y:ys) "-" = (y - x) : ys
     -- expect it to be multiple numbers represented as string if it is not one
     -- of our symbols [*,+,-,..]
     foldingFunction xs numberString = read numberString : xs
@@ -781,17 +798,19 @@ solveRPN = head . foldl foldingFunction [] . words
 -- time cannot find the correct version right now. Skip this for now. Not to
 -- important.
 readMaybe :: (Read a) => String -> Maybe a
-readMaybe st = case reads st of
-  [(x, "")] -> Just x
-  _ -> Nothing
+readMaybe st =
+  case reads st of
+    [(x, "")] -> Just x
+    _ -> Nothing
 
 -- MAYBE: do RPN failsafe.
-
 -- COMPOSING MONADIC FUNCTIONS:
 -- can compose monadic functions using <=<
 -- same as . but for functions of type a -> m b
 -- reminder, normal function composition
-monadicComposition1 = let f = (+ 1) . (* 100) in f 4
+monadicComposition1 =
+  let f = (+ 1) . (* 100)
+   in f 4
 
 -- could also use Just instead of return but return is more generic and since we
 -- are feeding it a Just 4 haskell can infer it will become the type of the
@@ -801,16 +820,23 @@ monadicComposition2 = Just 4 >>= f
     f = (\x -> return (x + 1)) <=< (\x -> return (x * 100))
 
 -- can compose bunch of functions in a list using foldl and .
-monadicComposition3 = let f = foldr (.) id [(+ 1), (* 100), (+ 1)] in f 1
+monadicComposition3 =
+  let f = foldr (.) id [(+ 1), (* 100), (+ 1)]
+   in f 1
 
 -- can compose monadic functions more or less in the same way. just using <=<
 -- instead of . and return instead of id.
 -- TODO: why can we use foldl here?
-monadicComposition4 = let f = foldl (<=<) return [(\x -> Just $ x + 1), (\x -> Just $ x * 100), (\x -> Just $ x + 1)] in f 1
+monadicComposition4 =
+  let f =
+        foldl
+          (<=<)
+          return
+          [(\x -> Just $ x + 1), (\x -> Just $ x * 100), (\x -> Just $ x + 1)]
+   in f 1
 
 -- monadic composition for the moveKnights problem.
 -- first, the
-
 -- copy paste from knights quest from Monads.hs:
 -- SOLUTION
 type KnightPos = (Int, Int)
@@ -818,15 +844,15 @@ type KnightPos = (Int, Int)
 moveKnight :: KnightPos -> [KnightPos]
 moveKnight (c, r) = do
   (c', r') <-
-    [ (c + 2, r -1),
-      (c + 2, r + 1),
-      (c -2, r -1),
-      (c -2, r + 1),
-      (c + 1, r -2),
-      (c + 1, r + 2),
-      (c -1, r -2),
-      (c -1, r + 2)
-      ]
+    [ (c + 2, r - 1)
+    , (c + 2, r + 1)
+    , (c - 2, r - 1)
+    , (c - 2, r + 1)
+    , (c + 1, r - 2)
+    , (c + 1, r + 2)
+    , (c - 1, r - 2)
+    , (c - 1, r + 2)
+    ]
   guard (c' `elem` [1 .. 8] && r' `elem` [1 .. 8])
   return (c', r')
 
@@ -858,7 +884,6 @@ canReachIn x start end = end `elem` inX start
 -- which does model an aspect of a certain problem and then can see if we can
 -- make this type with a context a monad instance for easier handling and
 -- composition.
-
 -- lists are non-deterministic monads --> feeding a list [1,2,3] to a function
 -- will result with a list of functions where each function is applied with a
 -- different parameter. For this non-determinism it would be cool to model
@@ -876,7 +901,11 @@ testFractions3 = [(2, 1 % 4), (4, 2 % 4), (9, 1 % 4)]
 -- create type that models value and the chance to get that value.
 -- Prob value constructor is of type [(a, Rational)]
 -- we can make an instance using Prob [(1,1%3)], or Prob [("hello",1%4)]
-newtype Prob a = Prob {getProb :: [(a, Rational)]} deriving (Show, Eq)
+newtype Prob a =
+  Prob
+    { getProb :: [(a, Rational)]
+    }
+  deriving (Show, Eq)
 
 -- 1) is this a functor?
 -- - what do we want to do when applying functions? --> apply them to the value,
@@ -904,20 +933,20 @@ testFunctorLawComposition1 = fmap testFunction2 $ fmap testFunction1 [1, 2, 3]
 testFunctorLawComposition2 = fmap (testFunction2 . testFunction1) [1, 2, 3]
 
 functorLawsHold =
-  testFirstFunctorLaw1 == testFirstFunctorLaw2
-    && testFunctorLawComposition1 == testFunctorLawComposition2
+  testFirstFunctorLaw1 == testFirstFunctorLaw2 &&
+  testFunctorLawComposition1 == testFunctorLawComposition2
 
 -- 2) can we make this an Applicative?
 instance Applicative Prob where
   pure x = Prob [(x, 1 % 1)]
-
   -- Why does this not work? :[
   -- xs --> [(f,ratio), (g, ratio), (h, ratio)];
   -- ys --> [(val,ratio), (val,ratio), ...]
   -- (Prob xs) <*> (Prob ys) = Prob (map (\x -> fmap x ys) xs)
   -- NOTE: Did this by checking how [] is an Applicative and applying it to
   -- Prob :] Still.. why did this above not work?
-  (Prob fs) <*> (Prob xs) = Prob ([(f x, ratio) | (f, _) <- fs, (x, ratio) <- xs])
+  (Prob fs) <*> (Prob xs) =
+    Prob ([(f x, ratio) | (f, _) <- fs, (x, ratio) <- xs])
 
 -- check the applicative laws (making something an instance does not mean it
 -- really belongs to the mathematical type we are trying to mimic!)
@@ -925,21 +954,6 @@ instance Applicative Prob where
 -- 2) pure (.) <*> f <*> g <*> x = f <*> ( g <*> x)
 -- 3) pure f <*> pure x = pure (f x)
 -- 4) u <*> pure y = pure ($ y) <*> u
--- NOTE: don't test them right now. do once finished. is the 4) a typo?? ($ y)
--- ??
-
--- 3) can we make this a Monad?
--- - check how list was made a Monad and figure out how to make Prob a Monad
--- how list is a Monad:
--- instance Monad [] where
---     return x = [x]
---     xs >>= f = concat (map f xs)
---     fail _ = []
--- NOTE: What should we do with ratios? Keep the old ones? Do nothing? Check
--- solution.
--- instance Monad Prob where
---     return x = pure x
---     Prob xs >>= f = Prob ([ f val | (val, ratio) <- xs])
 -- SOLUTION:
 -- since >>= seems kind of tricky and >>= is equal to join (fmap f xs) we are
 -- trying to implement join/flattening.
@@ -948,31 +962,37 @@ instance Applicative Prob where
 -- This would mean that the values of the inner Prob (e.g. (2, 1%2) would come
 -- up with the chance of the outer Prob (e.g. 1%4). How to get the resulting
 -- probability? Multiply them!
--- flattenProbs (Prob (Prob xs, probOuter)) = Prob (map (\(val,probInner) -> (val, probInner * probOuter)) xs)
--- TODO: why does this not work? :[
--- - because we have a list of prob xs, and probOuter, not just a Prob xs and
--- Probouter !!
-
 thisSituation :: Prob (Prob Char)
 thisSituation =
   Prob
-    [ (Prob [('a', 1 % 2), ('b', 1 % 2)], 1 % 4),
-      (Prob [('c', 1 % 2), ('d', 1 % 2)], 3 % 4)
+    [ (Prob [('a', 1 % 2), ('b', 1 % 2)], 1 % 4)
+    , (Prob [('c', 1 % 2), ('d', 1 % 2)], 3 % 4)
     ]
 
 flattenProbs :: Prob (Prob a) -> Prob a
--- multProps for every outer list containing a Prop with a list of tuples and an
--- outer prob. call concat/flat to create one list with of tuples.
+-- creates a Prob (val, probResult).
+-- takes something like Prob [Prob [("hello", 1%2), ("world"), 1%3], 1%5]
+-- means something like "chance of hello with 1%2" occures with a chance with 1%5"
 flattenProbs (Prob xs) = Prob $ concat $ map multProbs xs
   where
-    multProbs (Prob xsInner, probOuter) = map (\(val, probInner) -> (val, probInner * probOuter)) xsInner
+    multProbs (Prob xsInner, probOuter) =
+      map (\(val, probInner) -> (val, probInner * probOuter)) xsInner
+
+-- same as above, without helper function where.
+flattenProbs2 :: Prob (Prob a) -> Prob a
+flattenProbs2 (Prob xs) =
+  Prob $
+  concat $
+  map
+    (\(Prob xsInner, probOuter) ->
+       map (\(val, probInner) -> (val, probInner * probOuter)) xsInner)
+    xs
 
 testFlattenProbs = flattenProbs thisSituation
 
 -- now creating a Monad instance is easy.
 instance Monad Prob where
   return x = pure x
-
   -- m >>= f is equal to join/flatten (fmap f m)
   m >>= f = flattenProbs (fmap f m)
 
@@ -981,8 +1001,10 @@ instance Monad Prob where
 -- 1) return x >>= f is equal to f x
 -- 2) m >>= return is equal to m
 -- 3) (m >>= f) >>= g is equal to m >>= (\x -> f x >>= g)
-
-data Coin = Heads | Tails deriving (Show, Eq)
+data Coin
+  = Heads
+  | Tails
+  deriving (Show, Eq)
 
 coin :: Prob Coin
 coin = Prob [(Heads, 1 % 2), (Tails, 1 % 2)]
@@ -990,21 +1012,87 @@ coin = Prob [(Heads, 1 % 2), (Tails, 1 % 2)]
 loadedCoin :: Prob Coin
 loadedCoin = Prob [(Heads, 1 % 10), (Tails, 9 % 10)]
 
--- flips coins using our probability Monad.
--- TODO: Try to figure out how this works.
 flipCoins :: Prob Bool
 flipCoins = do
   a <- coin
   b <- coin
   c <- loadedCoin
-  -- Why/How does all (==Tails) [a,b,c] work?
+  -- goes through every possibility from a, every from b and every from c.
+  -- for each function coin or loadedCoin we get two results. ending up in 2 * 2
+  -- * 2 = 8 possible results. See examples below.
   return (all (== Tails) [a, b, c])
+
+-- Prop xs is the same as Prob {getProb = xs}
+probGetProbXs = Prob {getProb = [(Heads, 1 % 2), (Tails, 1 % 2)]}
+
+-- this means coin results in this. A Prob with a list of tuples of type (coin,
+-- rational)
+probXs = Prob [(Heads, 1 % 2), (Tails, 1 % 2)]
+
+-- 0 1 2 are the same, just without syntactic sugar
+flipCoins0 :: Prob Coin
+flipCoins0 = do
+  a <- coin
+  return a
+
+flipCoins1 :: Prob Coin
+flipCoins1 = coin >>= (\a -> return a)
+
+flipCoins2 :: Prob Coin
+flipCoins2 = flattenProbs $ fmap (\a -> return a) coin
+
+-- 3 4 5 6 are the same, just without syntactic sugar.
+flipCoins3 :: Prob Bool
+flipCoins3 = do
+  a <- coin
+  return (all (== Tails) [a])
+
+flipCoins4 :: Prob Bool
+flipCoins4 = coin >>= (\a -> return (all (== Tails) [a]))
+
+flipCoins5 :: Prob Bool
+flipCoins5 = flattenProbs $ fmap (\a -> return (all (== Tails) [a])) coin
+
+-- same as 5 but with Prob constructor instead of coin function
+flipCoins6 :: Prob Bool
+flipCoins6 =
+  flattenProbs $
+  fmap (\a -> pure (all (== Tails) [a])) $ Prob [(Heads, 1 % 2), (Tails, 1 % 2)]
+
+-- equal to 6, not the "same". This shows the functions in which fmap f xs in flipCoins6 will result.
+flipCoins6Example :: Prob Bool
+flipCoins6Example =
+  Prob $
+  [ ((\a -> all (== Tails) [a]) Heads, 1 % 2 :: Rational)
+  , ((\a -> all (== Tails) [a]) Tails, 1 % 2 :: Rational)
+  ]
+
+-- 7 8 9 are the same, just without syntactic sugar.
+flipCoins7 :: Prob Bool
+flipCoins7 = do
+  a <- coin
+  b <- coin
+  return (all (== Tails) [a, b])
+
+flipCoins8 :: Prob Bool
+flipCoins8 = coin >>= (\a -> coin >>= (\b -> return (all (== Tails) [a, b])))
+
+flipCoins9 :: Prob Bool
+flipCoins9 =
+  flattenProbs $
+  fmap
+    (\a -> flattenProbs $ fmap (\b -> return (all (== Tails) [a, b])) coin)
+    coin
 
 sumProbs' :: Prob Bool -> Prob Bool
 sumProbs' (Prob xs) = Prob [sumProbs $ allFalse xs, sumProbs $ allTrue xs]
   where
     allTrue xs = filter fst xs
     allFalse xs = filter (not . fst) xs
-    sumProbs xs = foldl (\(val1, prob1) (val2, prob2) -> (val2, prob1 + prob2)) (False, 0 % 1) xs
+    sumProbs xs =
+      foldl
+        (\(val1, prob1) (val2, prob2) -> (val2, prob1 + prob2))
+        (False, 0 % 1)
+        xs
 
 testProbMonadFlipCoins = getProb $ sumProbs' flipCoins
