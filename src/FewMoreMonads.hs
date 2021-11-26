@@ -1018,7 +1018,7 @@ flipCoins = do
   b <- coin
   c <- loadedCoin
   -- goes through every possibility from a, every from b and every from c.
-  -- for each function coin or loadedCoin we get two results. ending up in 2 * 2
+  -- for each function coin of loadedCoin we get two results. ending up in 2 * 2
   -- * 2 = 8 possible results. See examples below.
   return (all (== Tails) [a, b, c])
 

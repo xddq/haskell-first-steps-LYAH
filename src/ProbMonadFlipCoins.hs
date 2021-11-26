@@ -24,6 +24,16 @@ flattenProbs (Prob xs) = Prob $ concat $ map multProbs xs
     multProbs (Prob xsInner, probOuter) =
       map (\(val, probInner) -> (val, probInner * probOuter)) xsInner
 
+-- same as above, without helper function where.
+flattenProbs2 :: Prob (Prob a) -> Prob a
+flattenProbs2 (Prob xs) =
+  Prob $
+  concat $
+  map
+    (\(Prob xsInner, probOuter) ->
+       map (\(val, probInner) -> (val, probInner * probOuter)) xsInner)
+    xs
+
 testFlattenProbs = flattenProbs thisSituation
 
 -- fmap :: (a -> b) -> f a -> f b
@@ -51,7 +61,7 @@ flipCoins = do
   b <- coin
   c <- loadedCoin
   -- goes through every possibility from a, every from b and every from c.
-  -- for each function coin or loadedCoin we get two results. ending up in 2 * 2
+  -- for each function coin of loadedCoin we get two results. ending up in 2 * 2
   -- * 2 = 8 possible results. See examples below.
   return (all (== Tails) [a, b, c])
 
