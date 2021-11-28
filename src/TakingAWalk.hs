@@ -307,4 +307,72 @@ testSelectFS1 = testFS0 -: selectFSItem "pope_time.avi"
 
 testSelectFS2 =
   (myDisk, []) -: selectFSItem "pics" -: selectFSItem "skull_man(scary).bmp"
--- TODO: continue here!
+
+-- renaming a file.
+fsRename1 :: Name -> FSZipper1 -> FSZipper1
+fsRename1 newName (File name content, crumbs) = (File newName content, crumbs)
+fsRename1 newName (Folder name content, crumbs) =
+  (Folder newName content, crumbs)
+
+testFsRename1 = (myDisk, []) -: selectFSItem "pics" -: fsRename1 "cspi" -: fsUp1
+
+-- adding new item into current folder
+fsAddItem :: FSItem -> FSZipper1 -> FSZipper1
+fsAddItem newItem (Folder name items, crumbs) =
+  (Folder name $ items ++ [newItem], crumbs)
+
+testFsAddItem =
+  (myDisk, []) -: fsAddItem (File "testfile!" "woaaah, test content!")
+
+-- NOTE: skips doing Maybe Monad for the Tree. Instead do the Maybe Monad for
+-- the file system.
+-- currently our functions just straight up trow an error if we run into issues
+-- (going up with no crumbs, going left when subtree is empty, ...)
+-- --> get decent error handling by using our Maybe Monad! :]
+fsUp2 :: FSZipper1 -> Maybe FSZipper1
+fsUp2 (Folder currentName content, FSCrumb1 name ls rs:restCrumbs) =
+  Just (Folder name (ls ++ [(Folder currentName content)] ++ rs), restCrumbs)
+fsUp2 (File _ _, _) = Nothing
+
+fsDown2 :: FSZipper1 -> Maybe FSZipper1
+fsDown2 (Folder name (item:items), crumbs) =
+  Just (item, FSCrumb1 name [] items : crumbs)
+fsDown2 (File _ _, _) = Nothing
+
+-- prev goes to right
+fsNext2 :: FSZipper1 -> Maybe FSZipper1
+fsNext2 (_, []) = Nothing
+fsNext2 (item, FSCrumb1 name ls (r:rs):restCrumbs) =
+  Just (r, FSCrumb1 name (item : ls) rs : restCrumbs)
+
+-- prev goes to left
+fsPrev2 :: FSZipper1 -> Maybe FSZipper1
+fsPrev2 (_, []) = Nothing
+fsPrev2 (item, FSCrumb1 name (l:ls) rs:restCrumbs) =
+  Just (l, FSCrumb1 name ls (item : rs) : restCrumbs)
+
+-- testFS2 = (myDisk, []) -: fsDown1
+--
+-- testFS3 = (myDisk, []) -: fsDown1 -: fsNext1
+--
+-- testFS4 = (myDisk, []) -: fsDown1 -: fsNext1 -: fsNext1
+--
+-- testFS5 = (myDisk, []) -: fsDown1 -: fsNext1 -: fsNext1 -: fsNext1 -: fsPrev1
+--
+-- testFS6 = (myDisk, []) -: fsDown1 -: fsNext1 -: fsNext1 -: fsDown1 -: fsUp1
+testMaybeFs1 = (myDisk, [])
+
+testMaybeFs2 = return (myDisk, []) >>= fsDown2 >>= fsNext2
+
+testMaybeFs3 = return (myDisk, []) >>= fsDown2 >>= fsNext2 >>= fsNext2
+
+-- check impossible case (without Maybe Monad, does return error)
+testFsError4 =
+  (myDisk, []) -: fsDown1 -: fsDown1 -: fsDown1 -: fsDown1 -: fsDown1
+
+-- with Maybe Monad, graceful Nothing. With Either Monad we could add a specific
+-- error message as well:]
+testMaybeFs4 =
+  return (myDisk, []) >>= fsDown2 >>= fsDown2 >>= fsDown2 >>= fsDown2 >>=
+  fsDown2
+-- WE ARE DONE WITH THE LEARN YOU A HASKELL BOOK ! :]
